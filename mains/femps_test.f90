@@ -1,23 +1,25 @@
 program fempoisson_driver
 
-use fempoisson_mod, only: fempoisson
+use femps_mod, only: class_femps => femps
+use mpi
+use netcdf
 
 implicit none
-type(fempoisson) :: femp
+type(class_femps) :: femps
 
 
 ! Perform all the setup
 ! ---------------------
-call femp%preliminary()
+call femps%preliminary()
 print *,'done preliminary'
 
 ! Test the poisson solver
 ! -----------------------
-call femp%testpoisson()
+call femps%testpoisson()
 print *,'done testpoisson'
 
 ! Clean up
 ! --------
-call femp%delete()
+call femps%delete()
 
 end program fempoisson_driver

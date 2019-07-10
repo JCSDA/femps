@@ -1,15 +1,15 @@
-module fempoisson_mod
+module femps_mod
 
-use fempoisson_constants_mod
+use femps_constants_mod
 
 implicit none
 private
 
-public fempoisson
+public femps
 
 ! --------------------------------------------------------------------------------------------------
 
-type fempoisson
+type femps
 
 ! Grid file
 character*31 :: ygridfile = 'gridopermap_cube_0000013824.dat'
@@ -194,7 +194,7 @@ contains
  procedure :: dual_centroid
  procedure :: testpoisson 
 
-end type fempoisson
+end type femps
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -207,7 +207,7 @@ subroutine preliminary(self)
 ! Preliminary calculations and setting up
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 ! Read namelist information
 ! -------------------------
@@ -247,7 +247,7 @@ end subroutine preliminary
 subroutine readnml(self)
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 integer, parameter :: channml = 20
 character*31 :: ygridfile
@@ -269,7 +269,7 @@ end subroutine readnml
 subroutine allocateall(self)
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 ! Arrays in module laplacian
 ! --------------------------
@@ -283,7 +283,7 @@ end subroutine allocateall
 subroutine delete(self)
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 if (allocated(self%nface     )) deallocate(self%nface     )
 if (allocated(self%nedge     )) deallocate(self%nedge     )
@@ -355,7 +355,7 @@ subroutine buildlap(self)
 ! for the multigrid Poisson solver at all resolutions
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 integer :: igrid, if1, if2, if3, ie1, ie2, &
            ixd2, ixm, ixd1, ixl
@@ -421,10 +421,10 @@ subroutine Dprimal1(self,f,df,igrid,nv,ne)
 ! of f along primal cell edges.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nv, ne
-real*8,            intent(in)  :: f(nv)
-real*8,            intent(out) :: df(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nv, ne
+real*8,       intent(in)  :: f(nv)
+real*8,       intent(out) :: df(ne)
 
 integer :: ie1, iv1, iv2
 
@@ -446,10 +446,10 @@ subroutine Dprimal2(self,f,df,igrid,ne,nf)
 ! over primal cells.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne, nf
-real*8,            intent(in)  :: f(ne)
-real*8,            intent(out) :: df(nf)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne, nf
+real*8,       intent(in)  :: f(ne)
+real*8,       intent(out) :: df(nf)
 
 integer :: if1, ix, ie1
 real*8 :: temp
@@ -475,10 +475,10 @@ subroutine Ddual1(self,f,df,igrid,nf,ne)
 ! of f along dual cell edges.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf, ne
-real*8,            intent(in)  :: f(nf)
-real*8,            intent(out) :: df(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf, ne
+real*8,       intent(in)  :: f(nf)
+real*8,       intent(out) :: df(ne)
 
 integer :: ie1, if1, if2
 
@@ -500,10 +500,10 @@ subroutine Ddual2(self,f,df,igrid,ne,nv)
 ! over dual cells.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne, nv
-real*8,            intent(in)  :: f(ne)
-real*8,            intent(out) :: df(nv)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne, nv
+real*8,       intent(in)  :: f(ne)
+real*8,       intent(out) :: df(nv)
 
 integer :: iv1, ix, ie1
 real*8 :: temp
@@ -526,7 +526,7 @@ subroutine buildjlump(self)
 ! Build a lumped version of the j matrix
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 ! Two choices for lumped J
 ! ijlump = 1     Diagonal of J
@@ -583,7 +583,7 @@ subroutine buildmlump(self)
 ! Build a lumped version of the M matrix
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 ! Three choices for lumped M
 ! imlump = 1     Diagonal of M
@@ -677,7 +677,7 @@ subroutine buildhlump(self)
 ! Build a lumped version of the H matrix
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 ! Three choices for lumped H
 ! ihlump = 1     Diagonal of H
@@ -811,7 +811,7 @@ subroutine buildxminv(self)
 ! inverse of M.
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 logical :: llump
 integer :: igrid, ie0, ix, ie1
@@ -882,10 +882,10 @@ subroutine massL(self,f1,f2,igrid,nf)
 ! Apply the mass matrix L to field f1 to obtain the result f2
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf
-real*8,            intent(in)  :: f1(nf)
-real*8,            intent(out) :: f2(nf)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf
+real*8,       intent(in)  :: f1(nf)
+real*8,       intent(out) :: f2(nf)
 integer :: if1, if2, ix
 real*8 :: temp
 
@@ -907,10 +907,10 @@ subroutine massM(self,f1,f2,igrid,ne)
 ! Apply the mass matrix M to field f1 to obtain field f2
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne
-real*8,            intent(in)  :: f1(ne)
-real*8,            intent(out) :: f2(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne
+real*8,       intent(in)  :: f1(ne)
+real*8,       intent(out) :: f2(ne)
 integer :: ie1, ie2, ix
 real*8 :: temp
 
@@ -933,10 +933,10 @@ subroutine approxMinv(self,f1,f2,igrid,ne)
 ! to field f1 to obtain field f2
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne
-real*8,            intent(in)  :: f1(ne)
-real*8,            intent(out) :: f2(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne
+real*8,       intent(in)  :: f1(ne)
+real*8,       intent(out) :: f2(ne)
 
 integer :: ie1, ie2, ix
 real*8 :: temp
@@ -960,10 +960,10 @@ subroutine HodgeJ(self,f1,f2,igrid,nv)
 ! integrals f1 to vertex values f2 on grid igrid.
 
 implicit none
-class(fempoisson), intent(in) :: self
-integer,           intent(in) :: igrid, nv
-real*8,            intent(in) :: f1(nv)
-real*8,            intent(out) :: f2(nv)
+class(femps), intent(in) :: self
+integer,      intent(in) :: igrid, nv
+real*8,       intent(in) :: f1(nv)
+real*8,       intent(out) :: f2(nv)
 
 integer :: iv1, iv2, ix
 real*8 :: temp
@@ -988,10 +988,10 @@ subroutine HodgeH(self,f1,f2,igrid,ne)
 ! on grid igrid.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne
-real*8,            intent(in)  :: f1(ne)
-real*8,            intent(out) :: f2(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne
+real*8,       intent(in)  :: f1(ne)
+real*8,       intent(out) :: f2(ne)
 
 integer :: ie1, ie2, ix
 real*8 :: temp
@@ -1021,11 +1021,11 @@ subroutine massLinv(self,f1,f2,igrid,nf,niter)
 ! If L is diagonal then there is no need to iterate.
 
 implicit none
-class(fempoisson), intent(in)    :: self
-integer,           intent(in)    :: niter
-integer,           intent(in)    :: igrid, nf
-real*8,            intent(in)    :: f1(nf)
-real*8,            intent(inout) :: f2(nf)
+class(femps), intent(in)    :: self
+integer,      intent(in)    :: niter
+integer,      intent(in)    :: igrid, nf
+real*8,       intent(in)    :: f1(nf)
+real*8,       intent(inout) :: f2(nf)
 
 integer :: if1, iter, miter
 real*8 :: temp(nf)
@@ -1066,11 +1066,11 @@ subroutine massMinv(self,f1,f2,igrid,ne,niter)
 ! If M is diagonal then there is no need to iterate.
 
 implicit none
-class(fempoisson), intent(in)    :: self
-integer,           intent(in)    :: niter
-integer,           intent(in)    :: igrid, ne
-real*8,            intent(in)    :: f1(ne)
-real*8,            intent(inout) :: f2(ne)
+class(femps), intent(in)    :: self
+integer,      intent(in)    :: niter
+integer,      intent(in)    :: igrid, ne
+real*8,       intent(in)    :: f1(ne)
+real*8,       intent(inout) :: f2(ne)
 
 integer :: ie1, iter, miter
 real*8 :: temp(ne)
@@ -1119,11 +1119,11 @@ subroutine HodgeJinv(self,f1,f2,igrid,nv,niter)
 ! If J is diagonal then there is no need to iterate.
 
 implicit none
-class(fempoisson), intent(in)    :: self
-integer,           intent(in)    :: niter
-integer,           intent(in)    :: igrid, nv
-real*8,            intent(in)    :: f1(nv)
-real*8,            intent(inout) :: f2(nv)
+class(femps), intent(in)    :: self
+integer,      intent(in)    :: niter
+integer,      intent(in)    :: igrid, nv
+real*8,       intent(in)    :: f1(nv)
+real*8,       intent(inout) :: f2(nv)
 
 integer :: iv1, iter, miter
 real*8 :: temp(nv)
@@ -1165,11 +1165,11 @@ subroutine HodgeHinv(self,f1,f2,igrid,ne,niter)
 ! If H is diagonal then there is no need to iterate.
 
 implicit none
-class(fempoisson), intent(in)    :: self
-integer,           intent(in)    :: niter
-integer,           intent(in)    :: igrid, ne
-real*8,            intent(in)    :: f1(ne)
-real*8,            intent(inout) :: f2(ne)
+class(femps), intent(in)    :: self
+integer,      intent(in)    :: niter
+integer,      intent(in)    :: igrid, ne
+real*8,       intent(in)    :: f1(ne)
+real*8,       intent(inout) :: f2(ne)
 
 integer :: ie1, iter, miter
 real*8 :: temp(ne)
@@ -1210,10 +1210,10 @@ subroutine operW_original(self,f1,f2,igrid,ne)
 ! so is likely to be inefficient.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne
-real*8,            intent(in)  :: f1(ne)
-real*8,            intent(out) :: f2(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne
+real*8,       intent(in)  :: f1(ne)
+real*8,       intent(out) :: f2(ne)
 
 integer :: if1, ie1, ie2, ix, ix1, ix2, ixv, ne1
 real*8 :: ss, w
@@ -1255,10 +1255,10 @@ subroutine operR_original(self,f1,f2,igrid,nf,nv)
 ! an MPI reduce.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf, nv
-real*8,            intent(in)  :: f1(nf)
-real*8,            intent(out) :: f2(nv)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf, nv
+real*8,       intent(in)  :: f1(nf)
+real*8,       intent(out) :: f2(nv)
 
 integer :: if1, iv1, ix1, ne1
 
@@ -1291,10 +1291,10 @@ subroutine operW(self,f1,f2,igrid,ne)
 ! to the original formulation.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne
-real*8,            intent(in)  :: f1(ne)
-real*8,            intent(out) :: f2(ne)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne
+real*8,       intent(in)  :: f1(ne)
+real*8,       intent(out) :: f2(ne)
 
 integer :: ie0, ne1, ix1, ie1
 real*8 :: temp
@@ -1326,10 +1326,10 @@ subroutine operR(self,f1,f2,igrid,nf,nv)
 ! mathematically equivalent to the original formulation.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf, nv
-real*8,            intent(in)  :: f1(nf)
-real*8,            intent(out) :: f2(nv)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf, nv
+real*8,       intent(in)  :: f1(nf)
+real*8,       intent(out) :: f2(nv)
 
 integer :: iv0, if1, ix1, ne1
 real*8 :: temp
@@ -1357,10 +1357,10 @@ subroutine operT(self,f1,f2,igrid,ne,nf)
 ! of normal fluxes
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, ne, nf
-real*8,            intent(in)  :: f1(ne)
-real*8,            intent(out) :: f2(nf)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, ne, nf
+real*8,       intent(in)  :: f1(ne)
+real*8,       intent(out) :: f2(nf)
 
 integer :: if1, ix1, ix2, ne1, ie1, ie2
 real*8 :: temp
@@ -1392,10 +1392,10 @@ subroutine restrict(self,f1,nf1,f2,nf2,igrid)
 ! (discrete 2-forms).
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: nf1, nf2, igrid
-real*8,            intent(in)  :: f1(nf1)
-real*8,            intent(out) :: f2(nf2)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: nf1, nf2, igrid
+real*8,       intent(in)  :: f1(nf1)
+real*8,       intent(out) :: f2(nf2)
 
 integer :: if1, if2, ix
 real*8 :: wgt
@@ -1435,10 +1435,10 @@ subroutine prolong(self,f2,nf2,f1,nf1,igrid)
 ! and hence avoid an MPI reduce ***
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: nf1, nf2, igrid
-real*8,            intent(in)  :: f2(nf2)
-real*8,            intent(out) :: f1(nf1)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: nf1, nf2, igrid
+real*8,       intent(in)  :: f2(nf2)
+real*8,       intent(out) :: f1(nf1)
 integer :: if1, if2, ix, igridp
 real*8 :: wgt, f2if2, temp1(nf1), temp2(nf2)
 
@@ -1472,10 +1472,10 @@ subroutine laplace(self,f,hf,igrid,nf,ne)
 ! Note f and hf are area integrals (2-forms).
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf, ne
-real*8,            intent(in)  :: f(nf)
-real*8,            intent(out) :: hf(nf)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf, ne
+real*8,       intent(in)  :: f(nf)
+real*8,       intent(out) :: hf(nf)
 
 real*8 :: temp1(nf), temp2(ne), temp3(ne)
 integer :: niter
@@ -1498,10 +1498,10 @@ subroutine xlaplace(self,f,hf,igrid,nf,ne)
 ! Note f and hf are area integrals (2-forms).
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf, ne
-real*8,            intent(in)  :: f(nf)
-real*8,            intent(out) :: hf(nf)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf, ne
+real*8,       intent(in)  :: f(nf)
+real*8,       intent(out) :: hf(nf)
 
 real*8 :: temp1(nf), temp2(ne), temp3(ne)
 
@@ -1521,10 +1521,10 @@ subroutine residual(self,f,rhs,res,igrid,nf,ne)
 ! f, rhs and res are area integrals (2-forms).
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: igrid, nf, ne
-real*8,            intent(in)  :: f(nf), rhs(nf)
-real*8,            intent(out) :: res(nf)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: igrid, nf, ne
+real*8,       intent(in)  :: f(nf), rhs(nf)
+real*8,       intent(out) :: res(nf)
 
 call self%xlaplace(f,res,igrid,nf,ne)
 res = rhs - res
@@ -1540,10 +1540,10 @@ subroutine relax(self,f,rhs,igrid,nf,ne,niter)
 ! solver on grid igrid
 
 implicit none
-class(fempoisson), intent(in)    :: self
-integer,           intent(in)    :: igrid, nf, ne, niter
-real*8,            intent(in)    :: rhs(nf)
-real*8,            intent(inout) :: f(nf)
+class(femps), intent(in)    :: self
+integer,      intent(in)    :: igrid, nf, ne, niter
+real*8,       intent(in)    :: rhs(nf)
+real*8,       intent(inout) :: f(nf)
 
 real*8, allocatable :: res(:), finc(:)
 real*8 :: u
@@ -1574,10 +1574,10 @@ subroutine fullmgsolve(self,phi,rr,ng)
 ! Coefficients are contained in module laplace.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: ng
-real*8,            intent(in)  :: rr(self%nfacex)
-real*8,            intent(out) :: phi(self%nfacex)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: ng
+real*8,       intent(in)  :: rr(self%nfacex)
+real*8,       intent(out) :: phi(self%nfacex)
 
 ! Numbers of iterations on coarsest grid and other grids
 integer, parameter :: niterc = 10, niter = 2, npass = 1
@@ -1727,10 +1727,10 @@ subroutine mgsolve(self,phi,rr,ng)
 ! Coefficients are contained in module laplace.
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: ng
-real*8,            intent(in)  :: rr(self%nfacex)
-real*8,            intent(out) :: phi(self%nfacex)
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: ng
+real*8,       intent(in)  :: rr(self%nfacex)
+real*8,       intent(out) :: phi(self%nfacex)
 
 ! Numbers of iterations on coarsest grid and other grids
 integer, parameter :: niterc = 10, niter = 2
@@ -1822,7 +1822,7 @@ subroutine readgrid(self)
 ! and to read the information from file
 
 implicit none
-class(fempoisson), intent(inout)  :: self
+class(femps), intent(inout)  :: self
 
 integer :: if0, ie0, iv0, igrid, ix, ixx, if1, if2, iv1, iv2, ie1
 integer, parameter :: changrid = 25         ! grid information
@@ -2277,9 +2277,9 @@ subroutine centroid(self,if0,long,lat,igrid)
 ! Find the centroid of cell if0 on grid igrid
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: if0, igrid
-real*8,            intent(out) :: long, lat
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: if0, igrid
+real*8,       intent(out) :: long, lat
 
 integer :: ixe, ie1, iv1, iv2
 real*8 :: long1, lat1, x0, y0, z0, x1, y1, z1, x2, y2, z2, &
@@ -2327,9 +2327,9 @@ subroutine dual_centroid(self,iv0,long,lat,igrid)
 ! Find the centroid of dual cell iv0 on grid igrid
 
 implicit none
-class(fempoisson), intent(in)  :: self
-integer,           intent(in)  :: iv0, igrid
-real*8,            intent(out) :: long, lat
+class(femps), intent(in)  :: self
+integer,      intent(in)  :: iv0, igrid
+real*8,       intent(out) :: long, lat
 
 integer :: ixe, ie1, iv1, iv2
 real*8 :: long1, lat1, x0, y0, z0, x1, y1, z1, x2, y2, z2, &
@@ -2377,7 +2377,7 @@ subroutine testpoisson(self)
 ! To test the solution of thePoisson problem
 
 implicit none
-class(fempoisson), intent(inout) :: self
+class(femps), intent(inout) :: self
 
 ! Number of passes
 integer :: npass = 10
@@ -2476,4 +2476,4 @@ end subroutine testpoisson
 
 ! --------------------------------------------------------------------------------------------------
 
-end module fempoisson_mod
+end module femps_mod
