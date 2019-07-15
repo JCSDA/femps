@@ -1,5 +1,6 @@
 module femps_io_mod
 
+use femps_kinds_mod
 use femps_types_mod
 
 implicit none
@@ -151,9 +152,9 @@ end subroutine read_grid
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine write_ops(ops)
+subroutine write_pbops(pbops)
 
-type(fempsops), intent(in) :: ops
+type(fempspbops), intent(in) :: pbops
 
 IMPLICIT NONE
 
@@ -348,7 +349,7 @@ WRITE(changout) (((injwgt(if0,ix,igrid),        &
                      ix = 1, ninjmx),           &
                      igrid = 1, ngrids-1)
 
-end subroutine write_ops
+end subroutine write_pbops
 
 ! --------------------------------------------------------------------------------------------------
 

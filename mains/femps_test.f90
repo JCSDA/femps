@@ -1,8 +1,8 @@
 program fempoisson_driver
 
 use femps_mod, only: class_femps => femps
-use mpi
-use netcdf
+!use mpi
+!use netcdf
 
 implicit none
 type(class_femps) :: femps

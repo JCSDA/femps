@@ -15,141 +15,6 @@ type femps
 ! Grid file
 character*31 :: ygridfile = 'gridopermap_cube_0000013824.dat'
 
-! Number of grids in multigrid hierarchy
-integer :: ngrids
-
-! nface        Number of faces on each grid
-! nedge        Number of edges on each grid
-! nvert        Number of vertices on each edge 
-integer, allocatable :: nface(:), nedge(:), nvert(:)
-integer :: nfacex, nedgex, nvertx
-
-! neoff        Number of edges and vertices of each face on each grid
-! neofv        Number of edges of each vertex on each grid
-integer, allocatable :: neoff(:,:), neofv(:,:)
-integer :: nefmx, nevmx
-
-
-! CONNECTIVITY
-
-! fnxtf        Faces next to each face on each grid
-! eoff         Edges of each face on each grid
-! voff         Vertices of each face on each grid
-! fnxte        Faces either side of each edge on each grid
-! vofe         Vertices at the ends of each edge on each grid
-! fofv         Faces around each vertex on each grid
-! eofv         Edges incident on each vertex on each grid
-integer, allocatable :: fnxtf(:,:,:), eoff(:,:,:), voff(:,:,:), &
-                        fnxte(:,:,:), vofe(:,:,:), &
-                        fofv(:,:,:), eofv(:,:,:)
-
-! Conventions
-!
-! 1. fnxtf and eoff are ordered anticlockwise and such that
-! the i'th edge lies between the face in question and its i'th
-! neighbour.
-!
-! 2. voff are ordered anticlockwise such that the k'th vertex
-! is the common vertex of the k'th and (k+1)'th edge.
-!
-! 3. eofv are ordered anticlockwise.
-!
-! 4. fofv are ordered anticlockwise such that the k'th face lies
-! between the k'th and (k+1)'th edge.
-!
-! 5. The positive normal direction n points from
-! fnxte(:,1,:) -> fnxte(:,2,:)
-! and the positive tangential direction t points from
-! vofe(:,1,:) -> vofe(:,2,:)
-! such that t = k x n (where k is vertical).
-
-
-! eoffin(f,j,:)   Indicates whether the normal at the j'th edge is
-!                 inward or outward relative to face f.
-! eofvin(v,j,:)   Indicates whether the tangent at the j'th edge is
-!                 inward or outward relative to vertex v.
-integer, allocatable :: eoffin(:,:,:), eofvin(:,:,:)
-
-
-! COORDINATES AND GEOMETRICAL INFORMATION
-
-! flong        Longitude of faces on each grid
-! flat         Latitude of faces on each grid
-! vlong        Longitude of vertices on each grid
-! vlat         Latitude of vertices on each grid
-! farea        Area of faces on each grid
-! varea        Area of dual faces on each grid
-! ldist        Primal edge length, i.e. distance between neighbouring vertices
-! ddist        Dual edge length, i.e. distance between neighbouring face centres
-! fareamin     Minimum face areaon each grid
-real*8, allocatable :: flong(:,:), flat(:,:), &
-                       vlong(:,:), vlat(:,:), &
-                       farea(:,:), varea(:,:), &
-                       ldist(:,:), ddist(:,:), &
-                       fareamin(:)
-
-! Conventions
-!
-! Latitude and longitude in radians.
-! Area and lengths are for the unit sphere.
-
-
-! HODGE STAR, MASS MATRIX, AND RELATED OPERATORS
-
-! nlsten        Number of faces in stencil for L mass matrix
-! lsten         Stencil for L mass matrix
-! lmass         Coefficients for L mass matrix
-! nmsten        Number of faces in stencil for M mass matrix
-! msten         Stencil for M mass matrix
-! mmass         Coefficients for M mass matrix
-! njsten        Number of vertices in stencil for J operator
-! jsten         Stencil for J operator
-! jstar         Coefficients for J operator
-! nhsten        Number of edges in stencil for H operator
-! hsten         Stencil for H operator
-! hstar         Coefficients for H operator
-! nrsten        Number of vertices in stencil for R operator (= self%neoff)
-! rsten         Stencil for R operator (= voff)
-! rcoeff        Coefficients for R operator
-! nrxsten       Number of faces in stencil for R transpose operator (= self%neofv)
-! rxsten        Stencil for R transpose operator (= fofv)
-! rxcoeff       Coefficients for R transpose operator
-! nwsten        Number of edges in stencil for W operator
-! wsten         Stencil for W operator
-! wcoeff        Coefficients for W operator
-! ntsten        Number of edges in stencel for T operator
-! tsten         Stencil for T operator
-! tcoeff        Coefficients for T operator
-! jlump         Coefficients of lumped J matrix
-! mlump         Coefficients of lumped M matrix
-! hlump         Coefficients of lumped H matrix
-! nxminvten     Number of edges in stencil for approximate inverse of M
-! xminvsten     Stencil for approximate inverse of M
-! xminv         Coefficients for approximate inverse of M
-! velcoeff      Coefficients to reconstruct velocity vector in cells
-integer, allocatable :: nlsten(:,:), nmsten(:,:), njsten(:,:), &
-                        nhsten(:,:), nrsten(:,:), nrxsten(:,:), &
-                        nwsten(:,:), ntsten(:,:), nxminvsten(:,:)
-integer, allocatable :: lsten(:,:,:), msten(:,:,:), jsten(:,:,:), &
-                        hsten(:,:,:), rsten(:,:,:), rxsten(:,:,:), &
-                        wsten(:,:,:), tsten(:,:,:), xminvsten(:,:,:)
-real*8, allocatable :: lmass(:,:,:), mmass(:,:,:), jstar(:,:,:), &
-                       hstar(:,:,:), rcoeff(:,:,:), rxcoeff(:,:,:), &
-                       wcoeff(:,:,:), tcoeff(:,:,:,:), jlump(:,:), &
-                       mlump(:,:), hlump(:,:), xminv(:,:,:), &
-                       velcoeff(:,:,:)
-integer :: nlsmx, nmsmx, njsmx, nhsmx, nrsmx, nrxsmx, nwsmx, ntsmx, nxmisx
-
-
-! RESTRICTION AND PROLONGATION OPERATORS FOR MULTIGRID
-
-! ninj           Number of faces in stencil for restriction operator
-! injsten        Stencil for restriction operator
-! injwgt         Weights for restriction operator
-integer, allocatable :: ninj(:,:), injsten(:,:,:)
-real*8, allocatable :: injwgt(:,:,:)
-integer :: ninjmx
-
 real*8, allocatable :: lapdiag(:,:), underrel(:)
 
 contains
@@ -202,12 +67,14 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine preliminary(self)
+subroutine preliminary(self,grid,pbobs)
 
 ! Preliminary calculations and setting up
 
 implicit none
-class(femps), intent(inout) :: self
+class(femps),     intent(inout) :: self
+type(fempsgrid),  intent(inout) :: grid
+type(fempspbobs), intent(inout) :: pbobs
 
 ! Read namelist information
 ! -------------------------
@@ -285,63 +152,6 @@ subroutine delete(self)
 implicit none
 class(femps), intent(inout) :: self
 
-if (allocated(self%nface     )) deallocate(self%nface     )
-if (allocated(self%nedge     )) deallocate(self%nedge     )
-if (allocated(self%nvert     )) deallocate(self%nvert     )
-if (allocated(self%neoff     )) deallocate(self%neoff     )
-if (allocated(self%neofv     )) deallocate(self%neofv     )
-if (allocated(self%fnxtf     )) deallocate(self%fnxtf     )
-if (allocated(self%eoff      )) deallocate(self%eoff      )
-if (allocated(self%voff      )) deallocate(self%voff      )
-if (allocated(self%fnxte     )) deallocate(self%fnxte     )
-if (allocated(self%vofe      )) deallocate(self%vofe      )
-if (allocated(self%fofv      )) deallocate(self%fofv      )
-if (allocated(self%eofv      )) deallocate(self%eofv      )
-if (allocated(self%eoffin    )) deallocate(self%eoffin    )
-if (allocated(self%eofvin    )) deallocate(self%eofvin    )
-if (allocated(self%flong     )) deallocate(self%flong     )
-if (allocated(self%flat      )) deallocate(self%flat      )
-if (allocated(self%vlong     )) deallocate(self%vlong     )
-if (allocated(self%vlat      )) deallocate(self%vlat      )
-if (allocated(self%farea     )) deallocate(self%farea     )
-if (allocated(self%varea     )) deallocate(self%varea     )
-if (allocated(self%ldist     )) deallocate(self%ldist     )
-if (allocated(self%ddist     )) deallocate(self%ddist     )
-if (allocated(self%fareamin  )) deallocate(self%fareamin  )
-if (allocated(self%nlsten    )) deallocate(self%nlsten    )
-if (allocated(self%nmsten    )) deallocate(self%nmsten    )
-if (allocated(self%njsten    )) deallocate(self%njsten    )
-if (allocated(self%nhsten    )) deallocate(self%nhsten    )
-if (allocated(self%nrsten    )) deallocate(self%nrsten    )
-if (allocated(self%nrxsten   )) deallocate(self%nrxsten   )
-if (allocated(self%nwsten    )) deallocate(self%nwsten    )
-if (allocated(self%ntsten    )) deallocate(self%ntsten    )
-if (allocated(self%nxminvsten)) deallocate(self%nxminvsten)
-if (allocated(self%lsten     )) deallocate(self%lsten     )
-if (allocated(self%msten     )) deallocate(self%msten     )
-if (allocated(self%jsten     )) deallocate(self%jsten     )
-if (allocated(self%hsten     )) deallocate(self%hsten     )
-if (allocated(self%rsten     )) deallocate(self%rsten     )
-if (allocated(self%rxsten    )) deallocate(self%rxsten    )
-if (allocated(self%wsten     )) deallocate(self%wsten     )
-if (allocated(self%tsten     )) deallocate(self%tsten     )
-if (allocated(self%xminvsten )) deallocate(self%xminvsten )
-if (allocated(self%lmass     )) deallocate(self%lmass     )
-if (allocated(self%mmass     )) deallocate(self%mmass     )
-if (allocated(self%jstar     )) deallocate(self%jstar     )
-if (allocated(self%hstar     )) deallocate(self%hstar     )
-if (allocated(self%rcoeff    )) deallocate(self%rcoeff    )
-if (allocated(self%rxcoeff   )) deallocate(self%rxcoeff   )
-if (allocated(self%wcoeff    )) deallocate(self%wcoeff    )
-if (allocated(self%tcoeff    )) deallocate(self%tcoeff    )
-if (allocated(self%jlump     )) deallocate(self%jlump     )
-if (allocated(self%mlump     )) deallocate(self%mlump     )
-if (allocated(self%hlump     )) deallocate(self%hlump     )
-if (allocated(self%xminv     )) deallocate(self%xminv     )
-if (allocated(self%velcoeff  )) deallocate(self%velcoeff  )
-if (allocated(self%ninj      )) deallocate(self%ninj      )
-if (allocated(self%injsten   )) deallocate(self%injsten   )
-if (allocated(self%injwgt    )) deallocate(self%injwgt    )
 if (allocated(self%lapdiag   )) deallocate(self%lapdiag   )
 if (allocated(self%underrel  )) deallocate(self%underrel  )
 
