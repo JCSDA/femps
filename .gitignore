@@ -1,6 +1,9 @@
 # Build directory
 build
 
+# vim
+*.swp
+
 # Mac files
 *.DS_Store
 
