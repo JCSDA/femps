@@ -1,14 +1,15 @@
 module femps_constants_mod
 
+use femps_kinds_mod
+
 implicit none
 private
 
 ! Pi
-real*8, parameter, public :: pi = 3.14159265358979323d0
-real*8, parameter, public :: piby2 = 0.5d0*pi
+real(kind=kind_real), parameter, public :: pi = 3.14159265358979323_kind_real
+real(kind=kind_real), parameter, public :: piby2 = 0.5_kind_real*pi
 
 ! Earth's radius
-real*8, parameter, public :: rearth = 6371220.0d0
+real(kind=kind_real), parameter, public :: rearth = 6371220.0_kind_real
 
 end module femps_constants_mod
-
