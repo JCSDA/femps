@@ -3,7 +3,8 @@ module femps_types_mod
 use femps_kinds_mod
 
 implicit none
-public
+private
+public fempsgrid, fempspbops, allocate_grid, allocate_pbops, deallocate_grid, deallocate_pbops
 
 ! Type to hold all the grid information
 ! -------------------------------------
@@ -12,10 +13,10 @@ type fempsgrid
   ! Number of grids in multigrid hierarchy
   ! --------------------------------------
   integer :: ngrids
-  
+
   ! nface: number of faces on each grid
   ! nedge: number of edges on each grid
-  ! nvert: number of vertices on each edge 
+  ! nvert: number of vertices on each edge
   ! --------------------------------------
   integer :: nfacex, nedgex, nvertx
   integer, allocatable, dimension(:) :: nface, nedge, nvert
@@ -29,7 +30,7 @@ type fempsgrid
   ! -----------------------------------
   integer :: dimfnxtf, dimeoff, dimvoff, dimfnxte, dimvofe, dimfofv, dimeofv
 
-  ! CONNECTIVITY 
+  ! CONNECTIVITY
   ! fnxtf: faces next to each face on each grid
   ! eoff : edges of each face on each grid
   ! voff : vertices of each face on each grid
@@ -41,7 +42,7 @@ type fempsgrid
   integer, allocatable, dimension(:,:,:) :: fnxtf, eoff, voff, fnxte, &
                                             vofe, fofv, eofv
 
-  ! COORDINATES AND GEOMETRICAL INFORMATION 
+  ! COORDINATES AND GEOMETRICAL INFORMATION
   ! flong: longitude of faces on each grid
   ! flat : latitude of faces on each grid
   ! vlong: longitude of vertices on each grid
@@ -55,7 +56,7 @@ type fempsgrid
 
 end type fempsgrid
 
-! Type to hold the pre-build operators
+! Type to hold the pre-built operators
 ! ------------------------------------
 type fempspbops
 
@@ -121,9 +122,9 @@ type fempspbops
                                                            hstar, rcoeff, rxcoeff, &
                                                            wcoeff, xminv, velcoeff
 
-  real(kind=kind_real), allocatable, dimension(:,:,:,:) :: tcoeff 
-  
-  
+  real(kind=kind_real), allocatable, dimension(:,:,:,:) :: tcoeff
+
+
   ! RESTRICTION AND PROLONGATION OPERATORS FOR MULTIGRID
   ! ninj   : number of faces in stencil for restriction operator
   ! injsten: stencil for restriction operator
@@ -141,7 +142,7 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine set_fempsgrid_cs(grid)
+subroutine set_grid_cs(grid)
 
 implicit none
 type(fempsgrid), intent(inout) :: grid
@@ -162,11 +163,11 @@ grid%dimvofe  = 2
 grid%dimfofv  = 4
 grid%dimeofv  = 4
 
-end subroutine set_fempsgrid_cs
+end subroutine set_grid_cs
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine set_fempsgrid_ih(grid)
+subroutine set_grid_ih(grid)
 
 implicit none
 type(fempsgrid), intent(inout) :: grid
@@ -187,42 +188,42 @@ grid%dimvofe  = 2
 grid%dimfofv  = 3
 grid%dimeofv  = 3
 
-end subroutine set_fempsgrid_ih
+end subroutine set_grid_ih
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine allocate_fempsgrid(grid)
+subroutine allocate_grid(grid)
 
 implicit none
 type(fempsgrid), intent(inout) :: grid
 
 ! Allocate grid variables
-allocate(grid%neoff(grid%nfacex,grid%ngrids))
-allocate(grid%neofv(grid%nvertx,grid%ngrids))
-allocate(grid%nface(grid%ngrids))
-allocate(grid%nedge(grid%ngrids))
-allocate(grid%nvert(grid%ngrids))
-allocate(grid%fnxtf(nfacex,grid%dimfnxtf,grid%ngrids))
-allocate(grid%eoff (nfacex,grid%dimeoff ,grid%ngrids))
-allocate(grid%voff (nfacex,grid%dimvoff ,grid%ngrids))
-allocate(grid%fnxte(nedgex,grid%dimfnxte,grid%ngrids))
-allocate(grid%vofe (nedgex,grid%dimvofe ,grid%ngrids))
-allocate(grid%fofv (nvertx,grid%dimfofv ,grid%ngrids))
-allocate(grid%eofv (nvertx,grid%dimeofv ,grid%ngrids))
-allocate(grid%flong(nfacex,ngrids))
-allocate(grid%flat (nfacex,ngrids))
-allocate(grid%vlong(nvertx,ngrids))
-allocate(grid%vlat (nvertx,ngrids))
-allocate(grid%farea(nfacex,ngrids))
-allocate(grid%ldist(nedgex,ngrids))
-allocate(grid%ddist(nedgex,ngrids))
-allocate(grid%fareamin(grid%ngrids)
+allocate(grid%neoff   (grid%nfacex,grid%ngrids))
+allocate(grid%neofv   (grid%nvertx,grid%ngrids))
+allocate(grid%nface   (grid%ngrids))
+allocate(grid%nedge   (grid%ngrids))
+allocate(grid%nvert   (grid%ngrids))
+allocate(grid%fnxtf   (nfacex,grid%dimfnxtf,grid%ngrids))
+allocate(grid%eoff    (nfacex,grid%dimeoff ,grid%ngrids))
+allocate(grid%voff    (nfacex,grid%dimvoff ,grid%ngrids))
+allocate(grid%fnxte   (nedgex,grid%dimfnxte,grid%ngrids))
+allocate(grid%vofe    (nedgex,grid%dimvofe ,grid%ngrids))
+allocate(grid%fofv    (nvertx,grid%dimfofv ,grid%ngrids))
+allocate(grid%eofv    (nvertx,grid%dimeofv ,grid%ngrids))
+allocate(grid%flong   (nfacex,ngrids))
+allocate(grid%flat    (nfacex,ngrids))
+allocate(grid%vlong   (nvertx,ngrids))
+allocate(grid%vlat    (nvertx,ngrids))
+allocate(grid%farea   (nfacex,ngrids))
+allocate(grid%ldist   (nedgex,ngrids))
+allocate(grid%ddist   (nedgex,ngrids))
+allocate(grid%fareamin(grid%ngrids))
 
-end subroutine allocate_fempsgrid
+end subroutine allocate_grid
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine deallocate_fempsgrid(grid)
+subroutine deallocate_grid(grid)
 
 implicit none
 type(fempsgrid), intent(inout) :: grid
@@ -249,7 +250,7 @@ deallocate(grid%ldist)
 deallocate(grid%ddist)
 deallocate(grid%fareamin)
 
-end subroutine deallocate_fempsgrid
+end subroutine deallocate_grid
 
 ! --------------------------------------------------------------------------------------------------
 
