@@ -1,4 +1,4 @@
-module femps_constants_mod
+module femps_const_mod
 
 use femps_kinds_mod
 
@@ -12,4 +12,4 @@ real(kind=kind_real), parameter, public :: piby2 = 0.5_kind_real*pi
 ! Earth's radius
 real(kind=kind_real), parameter, public :: rearth = 6371220.0_kind_real
 
-end module femps_constants_mod
+end module femps_const_mod

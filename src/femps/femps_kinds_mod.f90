@@ -1,10 +1,11 @@
 module femps_kinds_mod
 
-use iso_binding
+ use, intrinsic :: iso_c_binding
+ implicit none
 
-implicit none
-private
+ private
+ public kind_real
 
-integer, parameter, public :: kind_real = c_double
+ integer, parameter :: kind_real=c_double
 
 end module femps_kinds_mod

@@ -1,4 +1,4 @@
-module femps_io_mod
+module femps_inout_mod
 
 use femps_kinds_mod
 use femps_types_mod
@@ -353,4 +353,4 @@ end subroutine write_pbops
 
 ! --------------------------------------------------------------------------------------------------
 
-end module femps_io_mod
+end module femps_inout_mod

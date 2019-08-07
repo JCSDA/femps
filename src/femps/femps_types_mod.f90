@@ -4,7 +4,7 @@ use femps_kinds_mod
 
 implicit none
 private
-public fempsgrid, fempspbops, allocate_grid, allocate_pbops, deallocate_grid, deallocate_pbops
+public fempsgrid, fempspbops
 
 ! Type to hold all the grid information
 ! -------------------------------------
@@ -53,6 +53,19 @@ type fempsgrid
   ! ------------------------------------------------------------------------
   real(kind=kind_real), allocatable, dimension(:,:) :: flong, flat, vlong, vlat, &
                                                        farea, ldist, ddist
+
+  real(kind=kind_real), allocatable, dimension(:) :: fareamin
+
+  ! Grid file
+  character*31 :: ygridfile = 'gridopermap_cube_0000013824.dat'
+
+  integer :: nefmx, nevmx
+
+  contains
+   procedure :: set_grid_cs
+   procedure :: set_grid_ih
+   procedure :: allocate_grid
+   procedure :: deallocate_grid
 
 end type fempsgrid
 
@@ -134,6 +147,12 @@ type fempspbops
   integer, allocatable, dimension(:,:,:) :: injsten
   real(kind=kind_real), allocatable, dimension(:,:,:) :: injwgt
 
+  real(kind=kind_real), allocatable :: lapdiag(:,:), underrel(:)
+
+  contains
+   procedure :: allocate_pbops
+   procedure :: deallocate_pbops
+
 end type fempspbops
 
 ! --------------------------------------------------------------------------------------------------
@@ -142,115 +161,145 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine set_grid_cs(grid)
+subroutine set_grid_cs(self)
 
 implicit none
-type(fempsgrid), intent(inout) :: grid
+class(fempsgrid), intent(inout) :: self
+
+integer :: n0, nx
 
 ! Set fempsgrid for a cubed sphere geometry
 ! -----------------------------------------
-grid%ngrids = 6
+self%ngrids = 6
 
-grid%nfacex = 6*nx*nx
-grid%nedgex = 2*nfacex
-grid%nvertx = nfacex + 2
+n0 = 3
+nx = n0*(2**(self%ngrids-1))
 
-grid%dimfnxtf = 4
-grid%dimeoff  = 4
-grid%dimvoff  = 4
-grid%dimfnxte = 2
-grid%dimvofe  = 2
-grid%dimfofv  = 4
-grid%dimeofv  = 4
+self%nfacex = 6*nx*nx
+self%nedgex = 2*self%nfacex
+self%nvertx = self%nfacex + 2
+
+self%dimfnxtf = 4
+self%dimeoff  = 4
+self%dimvoff  = 4
+self%dimfnxte = 2
+self%dimvofe  = 2
+self%dimfofv  = 4
+self%dimeofv  = 4
 
 end subroutine set_grid_cs
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine set_grid_ih(grid)
+subroutine set_grid_ih(self)
 
 implicit none
-type(fempsgrid), intent(inout) :: grid
+class(fempsgrid), intent(inout) :: self
 
 ! Set fempsgrid for a icosahedral hexagons geometry
 ! -------------------------------------------------
-grid%ngrids = 7
+self%ngrids = 7
 
-grid%nfacex=5*2**(2*ngrids-1)+2
-grid%nedgex=15*2**(2*ngrids-1)
-grid%nvertx=5*2**(2*ngrids)
+self%nfacex=5*2**(2*self%ngrids-1)+2
+self%nedgex=15*2**(2*self%ngrids-1)
+self%nvertx=5*2**(2*self%ngrids)
 
-grid%dimfnxtf = 6
-grid%dimeoff  = 6
-grid%dimvoff  = 6
-grid%dimfnxte = 2
-grid%dimvofe  = 2
-grid%dimfofv  = 3
-grid%dimeofv  = 3
+self%dimfnxtf = 6
+self%dimeoff  = 6
+self%dimvoff  = 6
+self%dimfnxte = 2
+self%dimvofe  = 2
+self%dimfofv  = 3
+self%dimeofv  = 3
 
 end subroutine set_grid_ih
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine allocate_grid(grid)
+subroutine allocate_grid(self)
 
 implicit none
-type(fempsgrid), intent(inout) :: grid
+class(fempsgrid), intent(inout) :: self
 
 ! Allocate grid variables
-allocate(grid%neoff   (grid%nfacex,grid%ngrids))
-allocate(grid%neofv   (grid%nvertx,grid%ngrids))
-allocate(grid%nface   (grid%ngrids))
-allocate(grid%nedge   (grid%ngrids))
-allocate(grid%nvert   (grid%ngrids))
-allocate(grid%fnxtf   (nfacex,grid%dimfnxtf,grid%ngrids))
-allocate(grid%eoff    (nfacex,grid%dimeoff ,grid%ngrids))
-allocate(grid%voff    (nfacex,grid%dimvoff ,grid%ngrids))
-allocate(grid%fnxte   (nedgex,grid%dimfnxte,grid%ngrids))
-allocate(grid%vofe    (nedgex,grid%dimvofe ,grid%ngrids))
-allocate(grid%fofv    (nvertx,grid%dimfofv ,grid%ngrids))
-allocate(grid%eofv    (nvertx,grid%dimeofv ,grid%ngrids))
-allocate(grid%flong   (nfacex,ngrids))
-allocate(grid%flat    (nfacex,ngrids))
-allocate(grid%vlong   (nvertx,ngrids))
-allocate(grid%vlat    (nvertx,ngrids))
-allocate(grid%farea   (nfacex,ngrids))
-allocate(grid%ldist   (nedgex,ngrids))
-allocate(grid%ddist   (nedgex,ngrids))
-allocate(grid%fareamin(grid%ngrids))
+allocate(self%neoff   (self%nfacex,self%ngrids))
+allocate(self%neofv   (self%nvertx,self%ngrids))
+allocate(self%nface   (self%ngrids))
+allocate(self%nedge   (self%ngrids))
+allocate(self%nvert   (self%ngrids))
+allocate(self%fnxtf   (self%nfacex,self%dimfnxtf,self%ngrids))
+allocate(self%eoff    (self%nfacex,self%dimeoff ,self%ngrids))
+allocate(self%voff    (self%nfacex,self%dimvoff ,self%ngrids))
+allocate(self%fnxte   (self%nedgex,self%dimfnxte,self%ngrids))
+allocate(self%vofe    (self%nedgex,self%dimvofe ,self%ngrids))
+allocate(self%fofv    (self%nvertx,self%dimfofv ,self%ngrids))
+allocate(self%eofv    (self%nvertx,self%dimeofv ,self%ngrids))
+allocate(self%flong   (self%nfacex,self%ngrids))
+allocate(self%flat    (self%nfacex,self%ngrids))
+allocate(self%vlong   (self%nvertx,self%ngrids))
+allocate(self%vlat    (self%nvertx,self%ngrids))
+allocate(self%farea   (self%nfacex,self%ngrids))
+allocate(self%ldist   (self%nedgex,self%ngrids))
+allocate(self%ddist   (self%nedgex,self%ngrids))
+allocate(self%fareamin(self%ngrids))
 
 end subroutine allocate_grid
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine deallocate_grid(grid)
+subroutine deallocate_grid(self)
 
 implicit none
-type(fempsgrid), intent(inout) :: grid
+class(fempsgrid), intent(inout) :: self
 
 ! Deallocate grid variables
-deallocate(grid%neoff)
-deallocate(grid%neofv)
-deallocate(grid%nface)
-deallocate(grid%nedge)
-deallocate(grid%nvert)
-deallocate(grid%fnxtf)
-deallocate(grid%eoff)
-deallocate(grid%voff)
-deallocate(grid%fnxte)
-deallocate(grid%vofe)
-deallocate(grid%fofv)
-deallocate(grid%eofv)
-deallocate(grid%flong)
-deallocate(grid%flat)
-deallocate(grid%vlong)
-deallocate(grid%vlat)
-deallocate(grid%farea)
-deallocate(grid%ldist)
-deallocate(grid%ddist)
-deallocate(grid%fareamin)
+deallocate(self%neoff)
+deallocate(self%neofv)
+deallocate(self%nface)
+deallocate(self%nedge)
+deallocate(self%nvert)
+deallocate(self%fnxtf)
+deallocate(self%eoff)
+deallocate(self%voff)
+deallocate(self%fnxte)
+deallocate(self%vofe)
+deallocate(self%fofv)
+deallocate(self%eofv)
+deallocate(self%flong)
+deallocate(self%flat)
+deallocate(self%vlong)
+deallocate(self%vlat)
+deallocate(self%farea)
+deallocate(self%ldist)
+deallocate(self%ddist)
+deallocate(self%fareamin)
 
 end subroutine deallocate_grid
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine allocate_pbops(self,grid)
+
+implicit none
+class(fempspbops), intent(inout) :: self
+type(fempsgrid),   intent(in)    :: grid
+
+allocate(self%lapdiag(grid%nfacex,grid%ngrids))
+allocate(self%underrel(grid%ngrids))
+
+end subroutine allocate_pbops
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine deallocate_pbops(self)
+
+implicit none
+class(fempspbops), intent(inout) :: self
+
+if (allocated(self%lapdiag   )) deallocate(self%lapdiag   )
+if (allocated(self%underrel  )) deallocate(self%underrel  )
+
+end subroutine deallocate_pbops
 
 ! --------------------------------------------------------------------------------------------------
 
