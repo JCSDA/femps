@@ -753,6 +753,9 @@ DO igrid = 1, grid%ngrids
   ENDDO
 ENDDO
 
+grid%nefmx = MAXVAL(grid%neoff)
+grid%nevmx = MAXVAL(grid%neofv)
+
 end subroutine cstestgrid
 
 ! --------------------------------------------------------------------------------------------------

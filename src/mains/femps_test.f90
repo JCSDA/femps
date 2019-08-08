@@ -1,66 +1,50 @@
 program fempoisson_driver
 
-use femps_types_mod, only: fempsgrid, fempspbops
-use femps_cstestgrid_mod, only: cdtestgrid
-use femps_mod, only: class_femps => femps
+use femps_grid_mod
+use femps_operators_mod
+use femps_testgrid_mod
+use femps_solve_mod, only: preliminary, testpoisson
+use femps_inout_mod, only: readgridoprs
 
 !use mpi
 !use netcdf
 
 implicit none
-type(fempsgrid)  :: grid
-type(fempspbops) :: pbobs
+type(fempsgrid) :: grid, gridread
+type(fempsoprs) :: oprs, oprsread
+
 character(len=2) :: gridtype
-logical :: readgrid, readpbops
+integer :: igrid
 
-! Setup
-! -----
+! Choose grid type
+! ----------------
 gridtype = 'cs'      !Cubesphere (cs) or icosahedral hexagons (ix)
-readgrid = .false.   !Read the grid from file
-readpbops = .false.  !Read the pre-build operators from file
 
 
-! Allocate the grid variables
-! ---------------------------
+! Create a grid
+! -------------
+call grid%setup(gridtype)
+
 if (gridtype == 'cs') then
-  call set_fempsgrid_cs(grid)
-elseif (gridtype == 'ix') then
-  call set_fempsgrid_ix(grid)
-else
-  print*, "gridtype must be either cs or ix"
-  return
+  call cstestgrid(grid,1,3)
 endif
 
-call allocate_grid(grid)
+! Build the operators
+! -------------------
+call oprs%setup(grid)
+call oprs%build(grid)
 
-
-! Allocate the fempsgrid type
-! ---------------------------
-if (.not. readgrid) then
-  if (gridtype == 'cs') then
-    call cstestgrid(grid)
-  elseif (gridtype == 'ix') then
-    call ixtestgrid(grid)
-  endif
-  call writegrid(grid)
-else
-  call readgrid(grid)
-endif
-
-!
 
 ! Perform all the setup
 ! ---------------------
-call femps%preliminary()
+call preliminary(grid,oprs)
 print *,'done preliminary'
+
 
 ! Test the poisson solver
 ! -----------------------
-call femps%testpoisson()
+call testpoisson(grid,oprs)
 print *,'done testpoisson'
 
-! Clean up
-! --------
-call femps%delete()
 
 end program fempoisson_driver

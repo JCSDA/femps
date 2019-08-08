@@ -22,8 +22,22 @@ subroutine preliminary(grid,oprs)
 ! Preliminary calculations and setting up
 
 implicit none
-type(fempsgrid), intent(in)    :: grid
+type(fempsgrid), intent(inout) :: grid
 type(fempsoprs), intent(inout) :: oprs
+
+integer :: igrid
+
+! Dimensionalize
+! --------------
+grid%farea = grid%farea*rearth*rearth
+grid%ldist = grid%ldist*rearth
+grid%ddist = grid%ddist*rearth
+! Determine smallest face area on each grid
+do igrid = 1, grid%ngrids
+  grid%fareamin(igrid) = minval(grid%farea(1:grid%nface(igrid),igrid))
+enddo
+oprs%varea = oprs%varea*rearth*rearth
+oprs%lmass = oprs%lmass/(rearth*rearth)
 
 ! Build a lumped version of the J, M and H matrices
 ! -------------------------------------------------

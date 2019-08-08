@@ -14,107 +14,91 @@ type fempsoprs
 
   ! Dimensions
   ! ----------
-  integer :: nlsmx, nmsmx, njsmx, nhsmx, nrsmx, nrxsmx, nwsmx, ntsmx, nxmisx, ninjmx
+  integer :: nlsmx
+  integer :: nmsmx
+  integer :: njsmx
+  integer :: nhsmx
+  integer :: nrsmx
+  integer :: nrxsmx
+  integer :: nwsmx
+  integer :: ntsmx
+  integer :: nxmisx
+  integer :: ninjmx
 
-  ! varea: area of dual faces on each grid
-  ! --------------------------------------
-  real(kind=kind_real), allocatable :: varea(:,:)
+  real(kind=kind_real), allocatable :: varea(:,:) !area of dual faces on each grid
 
-  ! eoffin(f,j,:)   Indicates whether the normal at the j'th edge is
-  !                 inward or outward relative to face f.
-  ! eofvin(v,j,:)   Indicates whether the tangent at the j'th edge is
-  !                 inward or outward relative to vertex v.
-  ! -------------------------------------------------------
-  integer, allocatable :: eoffin(:,:,:), eofvin(:,:,:)
+  integer, allocatable :: eoffin(:,:,:) !Indicates whether the normal at the j'th edge is inward or outward relative to face f
+  integer, allocatable :: eofvin(:,:,:) !Indicates whether the tangent at the j'th edge is inward or outward relative to vertex v.
 
   ! HODGE STAR, MASS MATRIX, AND RELATED OPERATORS
-  ! nlsten   : number of faces in stencil for L mass matrix
-  ! lsten    : stencil for L mass matrix
-  ! lmass    : coefficients for L mass matrix
-  ! nmsten   : number of faces in stencil for M mass matrix
-  ! msten    : stencil for M mass matrix
-  ! mmass    : coefficients for M mass matrix
-  ! njsten   : number of vertices in stencil for J operator
-  ! jsten    : stencil for J operator
-  ! jstar    : coefficients for J operator
-  ! nhsten   : number of edges in stencil for H operator
-  ! hsten    : stencil for H operator
-  ! hstar    : coefficients for H operator
-  ! nrsten   : number of vertices in stencil for R operator (= self%neoff)
-  ! rsten    : stencil for R operator (= voff)
-  ! rcoeff   : coefficients for R operator
-  ! nrxsten  : number of faces in stencil for R transpose operator (= self%neofv)
-  ! rxsten   : stencil for R transpose operator (= fofv)
-  ! rxcoeff  : coefficients for R transpose operator
-  ! nwsten   : number of edges in stencil for W operator
-  ! wsten    : stencil for W operator
-  ! wcoeff   : coefficients for W operator
-  ! ntsten   : number of edges in stencel for T operator
-  ! tsten    : stencil for T operator
-  ! tcoeff   : coefficients for T operator
-  ! jlump    : coefficients of lumped J matrix
-  ! mlump    : coefficients of lumped M matrix
-  ! hlump    : coefficients of lumped H matrix
-  ! nxminvten: number of edges in stencil for approximate inverse of M
-  ! xminvsten: stencil for approximate inverse of M
-  ! xminv    : coefficients for approximate inverse of M
-  ! velcoeff : coefficients to reconstruct velocity vector in cells
-  ! ---------------------------------------------------------------
-  integer, allocatable, dimension(:,:) :: nlsten, nmsten, njsten, &
-                                          nhsten, nrsten, nrxsten, &
-                                          nwsten, ntsten, nxminvsten
+  ! ----------------------------------------------
+  integer, allocatable, dimension(:,:) :: nlsten     ! number of faces in stencil for L mass matrix
+  integer, allocatable, dimension(:,:) :: nmsten     ! number of faces in stencil for M mass matrix
+  integer, allocatable, dimension(:,:) :: njsten     ! number of vertices in stencil for J operator
+  integer, allocatable, dimension(:,:) :: nhsten     ! number of edges in stencil for H operator
+  integer, allocatable, dimension(:,:) :: nrsten     ! number of vertices in stencil for R operator (= self%neoff)
+  integer, allocatable, dimension(:,:) :: nrxsten    ! number of faces in stencil for R transpose operator (= self%neofv)
+  integer, allocatable, dimension(:,:) :: nwsten     ! number of edges in stencil for W operator
+  integer, allocatable, dimension(:,:) :: ntsten     ! number of edges in stencel for T operator
+  integer, allocatable, dimension(:,:) :: nxminvsten ! number of edges in stencil for approximate inverse of M
 
-  integer, allocatable, dimension(:,:,:) :: lsten, msten, jsten, &
-                                            hsten, rsten, rxsten, &
-                                            wsten, tsten, xminvsten
+  integer, allocatable, dimension(:,:,:) :: lsten     ! stencil for L mass matrix
+  integer, allocatable, dimension(:,:,:) :: msten     ! stencil for M mass matrix
+  integer, allocatable, dimension(:,:,:) :: jsten     ! stencil for J operator
+  integer, allocatable, dimension(:,:,:) :: hsten     ! stencil for H operator
+  integer, allocatable, dimension(:,:,:) :: rsten     ! stencil for R operator (= voff)
+  integer, allocatable, dimension(:,:,:) :: rxsten    ! stencil for R transpose operator (= fofv)
+  integer, allocatable, dimension(:,:,:) :: wsten     ! stencil for W operator
+  integer, allocatable, dimension(:,:,:) :: tsten     ! stencil for T operator
+  integer, allocatable, dimension(:,:,:) :: xminvsten ! stencil for approximate inverse of M
 
-  real(kind=kind_real), allocatable, dimension(:,:)     :: jlump, mlump, hlump
+  real(kind=kind_real), allocatable, dimension(:,:) :: jlump ! coefficients of lumped J matrix
+  real(kind=kind_real), allocatable, dimension(:,:) :: mlump ! coefficients of lumped M matrix
+  real(kind=kind_real), allocatable, dimension(:,:) :: hlump ! coefficients of lumped H matrix
 
-  real(kind=kind_real), allocatable, dimension(:,:,:)   :: lmass, mmass, jstar, &
-                                                           hstar, rcoeff, rxcoeff, &
-                                                           wcoeff, xminv, velcoeff
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: lmass    ! coefficients for L mass matrix
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: mmass    ! coefficients for M mass matrix
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: jstar    ! coefficients for J operator
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: hstar    ! coefficients for H operator
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: rcoeff   ! coefficients for R operator
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: rxcoeff  ! coefficients for R transpose operator
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: wcoeff   ! coefficients for W operator
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: xminv    ! coefficients for approximate inverse of M
+  real(kind=kind_real), allocatable, dimension(:,:,:)   :: velcoeff ! coefficients to reconstruct velocity vector in cells
+  real(kind=kind_real), allocatable, dimension(:,:,:,:) :: tcoeff   ! coefficients for T operator
 
-  real(kind=kind_real), allocatable, dimension(:,:,:,:) :: tcoeff
-
-  real(kind=kind_real), allocatable :: elong(:,:), elat(:,:)
+  real(kind=kind_real), allocatable :: elong(:,:)
+  real(kind=kind_real), allocatable :: elat(:,:)
 
   ! RESTRICTION AND PROLONGATION OPERATORS FOR MULTIGRID
-  ! ninj   : number of faces in stencil for restriction operator
-  ! injsten: stencil for restriction operator
-  ! injwgt : weights for restriction operator
-  ! -----------------------------------------
-  integer, allocatable, dimension(:,:)   :: ninj
-  integer, allocatable, dimension(:,:,:) :: injsten
-  real(kind=kind_real), allocatable, dimension(:,:,:) :: injwgt
+  ! ----------------------------------------------------
+  integer,              allocatable, dimension(:,:)   :: ninj    ! number of faces in stencil for restriction operator
+  integer,              allocatable, dimension(:,:,:) :: injsten ! stencil for restriction operator
+  real(kind=kind_real), allocatable, dimension(:,:,:) :: injwgt  ! weights for restriction operator
 
-  real(kind=kind_real), allocatable :: lapdiag(:,:), underrel(:)
+  real(kind=kind_real), allocatable :: lapdiag(:,:)
+  real(kind=kind_real), allocatable :: underrel(:)
 
   ! INFORMATION DEFINING COMPOUND ELEMENTS
+  ! --------------------------------------
+  integer :: ncvpmx, ncspmx, ncepmx, ncvdmx, ncsdmx
 
-  ! ncvp            Number of internal dofs to define a compound
-  !                 P0 element in space Vp.
-  ! cvp             Dofs to define a compound element in space Vp.
-  ! ncsp            Number of internal dofs to define a compound
-  !                 RT0 element in space Sp.
-  ! csp             Dofs to define a compound element in space Sp.
-  ! ncep            Number of internal dofs to define a compound
-  !                 P1 element in space Ep.
-  ! cep             Dofs to define a compound element in space Ep.
-  ! ncvd            Number of internal dofs to define a compound
-  !                 P0 element in space Vd.
-  ! cvd             Dofs to define a compound element in space Vp.
-  ! ncsd            Number of internal dofs to define a compound
-  !                 N0 element in space Sd.
-  ! csd             Dofs to define a compound element in space Sd.
-  INTEGER, ALLOCATABLE :: ncvp(:), ncsp(:), ncep(:), &
-                          ncvd(:), ncsd(:)
-  REAL(kind=kind_real), ALLOCATABLE :: cvp(:,:), csp(:,:), cep(:,:), &
-                                       cvd(:,:), csd(:,:)
+  integer, allocatable :: ncvp(:) ! Number of internal dofs to define a compound P0 element in space Vp.
+  integer, allocatable :: ncsp(:) ! Number of internal dofs to define a compound RT0 element in space Sp.
+  integer, allocatable :: ncep(:) ! Number of internal dofs to define a compound P1 element in space Ep.
+  integer, allocatable :: ncvd(:) ! Number of internal dofs to define a compound P0 element in space Vd.
+  integer, allocatable :: ncsd(:) ! Number of internal dofs to define a compound N0 element in space Sd.
+
+  real(kind=kind_real), allocatable :: cvp(:,:) ! Dofs to define a compound element in space Vp.
+  real(kind=kind_real), allocatable :: csp(:,:) ! Dofs to define a compound element in space Sp.
+  real(kind=kind_real), allocatable :: cep(:,:) ! Dofs to define a compound element in space Ep.
+  real(kind=kind_real), allocatable :: cvd(:,:) ! Dofs to define a compound element in space Vp.
+  real(kind=kind_real), allocatable :: csd(:,:) ! Dofs to define a compound element in space Sd.
 
   contains
 
-   procedure :: alloc
-   procedure :: dealloc
+   procedure :: setup
+   procedure :: delete
    procedure :: build
 
    procedure :: ordering
@@ -142,7 +126,7 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine alloc(self,grid)
+subroutine setup(self,grid)
 
 implicit none
 class(fempsoprs), intent(inout) :: self
@@ -151,19 +135,156 @@ type(fempsgrid),  intent(in)    :: grid
 allocate(self%lapdiag(grid%nfacex,grid%ngrids))
 allocate(self%underrel(grid%ngrids))
 
-end subroutine alloc
+allocate(self%elong(grid%nedgex,grid%ngrids))
+allocate(self%elat (grid%nedgex,grid%ngrids))
+allocate(self%varea(grid%nvertx,grid%ngrids))
+
+allocate(self%jlump(grid%nvertx,grid%ngrids))
+allocate(self%mlump(grid%nedgex,grid%ngrids))
+allocate(self%hlump(grid%nedgex,grid%ngrids))
+
+self%ncvpmx = 2*grid%nefmx
+self%ncspmx = 2 + 4*grid%nefmx
+self%ncepmx = 2*grid%nefmx
+self%ncvdmx = 2*grid%nefmx
+self%ncsdmx = 2 + 4*grid%nevmx
+allocate(self%ncvp(grid%nfacex))
+allocate(self%ncsp(grid%nedgex))
+allocate(self%ncep(grid%nvertx))
+allocate(self%ncvd(grid%nvertx))
+allocate(self%ncsd(grid%nedgex))
+allocate(self%cvp (grid%nfacex,self%ncvpmx))
+allocate(self%csp (grid%nedgex,self%ncspmx))
+allocate(self%cep (grid%nvertx,self%ncepmx))
+allocate(self%cvd (grid%nvertx,self%ncvdmx))
+allocate(self%csd (grid%nedgex,self%ncsdmx))
+
+self%nlsmx = 1
+self%nmsmx = 2*grid%nefmx - 1
+self%njsmx = grid%nevmx*(grid%nefmx - 2) + 1
+self%nhsmx = 2*(grid%nevmx - 1)*(grid%nefmx - 1) - 1
+self%nrsmx = grid%nefmx
+self%nrxsmx = grid%nevmx
+self%nwsmx = 2*(grid%nefmx - 1)
+self%ntsmx = grid%nefmx
+allocate(self%nlsten (grid%nfacex,grid%ngrids))
+allocate(self%lsten  (grid%nfacex,self%nlsmx,grid%ngrids))
+allocate(self%lmass  (grid%nfacex,self%nlsmx,grid%ngrids))
+allocate(self%nmsten (grid%nedgex,grid%ngrids))
+allocate(self%msten  (grid%nedgex,self%nmsmx,grid%ngrids))
+allocate(self%mmass  (grid%nedgex,self%nmsmx,grid%ngrids))
+allocate(self%njsten (grid%nvertx,grid%ngrids))
+allocate(self%jsten  (grid%nvertx,self%njsmx,grid%ngrids))
+allocate(self%jstar  (grid%nvertx,self%njsmx,grid%ngrids))
+allocate(self%nhsten (grid%nedgex,grid%ngrids))
+allocate(self%hsten  (grid%nedgex,self%nhsmx,grid%ngrids))
+allocate(self%hstar  (grid%nedgex,self%nhsmx,grid%ngrids))
+allocate(self%nrsten (grid%nfacex,grid%ngrids))
+allocate(self%rsten  (grid%nfacex,self%nrsmx,grid%ngrids))
+allocate(self%rcoeff (grid%nfacex,self%nrsmx,grid%ngrids))
+allocate(self%nrxsten(grid%nvertx,grid%ngrids))
+allocate(self%rxsten (grid%nvertx,self%nrxsmx,grid%ngrids))
+allocate(self%rxcoeff(grid%nvertx,self%nrxsmx,grid%ngrids))
+allocate(self%nwsten (grid%nedgex,grid%ngrids))
+allocate(self%wsten  (grid%nedgex,self%nwsmx,grid%ngrids))
+allocate(self%wcoeff (grid%nedgex,self%nwsmx,grid%ngrids))
+allocate(self%ntsten (grid%nfacex,grid%ngrids))
+allocate(self%tsten  (grid%nfacex,self%ntsmx,grid%ngrids))
+allocate(self%tcoeff (grid%nfacex,self%ntsmx,self%ntsmx,grid%ngrids))
+
+self%lapdiag = 0.0_kind_real
+self%underrel = 0.0_kind_real
+self%elong = 0.0_kind_real
+self%elat = 0.0_kind_real
+self%varea = 0.0_kind_real
+self%jlump = 0.0_kind_real
+self%mlump = 0.0_kind_real
+self%hlump = 0.0_kind_real
+self%ncvp = 0
+self%ncsp = 0
+self%ncep = 0
+self%ncvd = 0
+self%ncsd = 0
+self%cvp = 0.0_kind_real
+self%csp = 0.0_kind_real
+self%cep = 0.0_kind_real
+self%cvd = 0.0_kind_real
+self%csd = 0.0_kind_real
+self%nlsten = 0
+self%lsten = 0
+self%lmass = 0.0_kind_real
+self%nmsten = 0
+self%msten = 0
+self%mmass = 0.0_kind_real
+self%njsten = 0
+self%jsten = 0
+self%jstar = 0.0_kind_real
+self%nhsten = 0
+self%hsten = 0
+self%hstar = 0.0_kind_real
+self%nrsten = 0
+self%rsten = 0
+self%rcoeff = 0.0_kind_real
+self%nrxsten = 0
+self%rxsten = 0
+self%rxcoeff = 0.0_kind_real
+self%nwsten = 0
+self%wsten = 0
+self%wcoeff = 0.0_kind_real
+self%ntsten = 0
+self%tsten = 0
+self%tcoeff = 0.0_kind_real
+
+end subroutine setup
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine dealloc(self)
+subroutine delete(self)
 
 implicit none
 class(fempsoprs), intent(inout) :: self
 
-if (allocated(self%lapdiag   )) deallocate(self%lapdiag   )
-if (allocated(self%underrel  )) deallocate(self%underrel  )
+deallocate(self%lapdiag)
+deallocate(self%underrel)
+deallocate(self%elong)
+deallocate(self%elat)
+deallocate(self%varea)
+deallocate(self%ncvp)
+deallocate(self%ncsp)
+deallocate(self%ncep)
+deallocate(self%ncvd)
+deallocate(self%ncsd)
+deallocate(self%cvp)
+deallocate(self%csp)
+deallocate(self%cep)
+deallocate(self%cvd)
+deallocate(self%csd)
+deallocate(self%nlsten)
+deallocate(self%lsten)
+deallocate(self%lmass)
+deallocate(self%nmsten)
+deallocate(self%msten)
+deallocate(self%mmass)
+deallocate(self%njsten)
+deallocate(self%jsten)
+deallocate(self%jstar)
+deallocate(self%nhsten)
+deallocate(self%hsten)
+deallocate(self%hstar)
+deallocate(self%nrsten)
+deallocate(self%rsten)
+deallocate(self%rcoeff)
+deallocate(self%nrxsten)
+deallocate(self%rxsten)
+deallocate(self%rxcoeff)
+deallocate(self%nwsten)
+deallocate(self%wsten)
+deallocate(self%wcoeff)
+deallocate(self%ntsten)
+deallocate(self%tsten)
+deallocate(self%tcoeff)
 
-end subroutine dealloc
+end subroutine delete
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -580,7 +701,8 @@ do igrid = 1, grid%ngrids
 enddo
 
 ! Construct the tables eoffin and eofvin
-ALLOCATE(self%eoffin(grid%nfacex,grid%nefmx,grid%ngrids), self%eofvin(grid%nvertx,grid%nevmx,grid%ngrids))
+allocate(self%eoffin(grid%nfacex,grid%nefmx,grid%ngrids))
+allocate(self%eofvin(grid%nvertx,grid%nevmx,grid%ngrids))
 do igrid = 1, grid%ngrids
 
   do if1 = 1, grid%nface(igrid)
@@ -604,7 +726,7 @@ do igrid = 1, grid%ngrids
       if (iv1 == iv2) THEN
         ! This edge points away from vertex iv1
         self%eofvin(iv1,ix,igrid) = -1.0d0
-      ELSE
+      else
         ! This edge points towards vertex iv1
         self%eofvin(iv1,ix,igrid) = 1.0d0
       endif
@@ -712,7 +834,7 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: nf, if0, ie1, iv1, ix, ixm
+integer :: nf, if0, ie1, iv1, ix, ixm
 real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), l1sq, l2sq, l3sq, a
 
 ! Number of faces on this grid
@@ -720,7 +842,10 @@ nf = grid%nface(igrid)
 
 ! Number of coefficients to define element - depends on
 ! shape of primal cell.
-self%ncvp(1:nf) = 2*grid%neoff(:,igrid)
+
+print*, 'TESTING', nf, size(grid%neoff,1), size(grid%neoff,2)
+print*,
+self%ncvp(1:nf) = 2*grid%neoff(1:nf,igrid)
 
 
 ! Loop over primal cells
@@ -796,12 +921,12 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: ne, ie0, if1, if2, ixf, ixv, iv1, nef1, ixc, &
+integer :: ne, ie0, if1, if2, ixf, ixv, iv1, nef1, ixc, &
            ie1, ixe, ix, ixv1, ixv2, ixe1, offset(2), &
            i1, i2, ixcp
 real(kind=kind_real) :: long, lat, x0(3), x1(3), l1, sgnflx, &
-          l1sq, l2sq, l3sq, a, atot, x2(3), x3(3), &
-          sum1, sum2, c00, sg, contrib
+                        l1sq, l2sq, l3sq, a, atot, x2(3), x3(3), &
+                        sum1, sum2, c00, sg, contrib
 
 ! Number of edges on this grid
 ne = grid%nedge(igrid)
@@ -848,7 +973,7 @@ do ie0 = 1, ne
     ! Is edge flux in or out of cell if1 ?
     if (ixf == 1) THEN
       sgnflx =  1.0d0 ! outward
-    ELSE
+    else
       sgnflx = -1.0d0 ! inward
     endif
 
@@ -862,7 +987,7 @@ do ie0 = 1, ne
 
     ! Which edge of cell if1 is ie0 ?
     ixe = 1
-    do WHILE (ie0 .NE. grid%eoff(if1,ixe,igrid))
+    do while (ie0 .NE. grid%eoff(if1,ixe,igrid))
       ixe = ixe + 1
     enddo
 
@@ -1011,17 +1136,17 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: nv, iv0, ix, ixp, ie1, if1, ixv, ixvp, iv1, iv2, &
+integer :: nv, iv0, ix, ixp, ie1, if1, ixv, ixvp, iv1, iv2, &
            nef1, nev0
 real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), x3(3), l1, &
-          l1sq, l2sq, l3sq, a, sum1, sum2
+                        l1sq, l2sq, l3sq, a, sum1, sum2
 
 ! Number of vertices on this grid
 nv = grid%nvert(igrid)
 
 ! Number of coefficients to define element - depends on
 ! shape of primal cell.
-self%ncep(1:nv) = 2*grid%neofv(:,igrid)
+self%ncep(1:nv) = 2*grid%neofv(1:nv,igrid)
 
 
 ! Loop over primal vertices
@@ -1155,7 +1280,7 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: nv, iv0, ie1, if1, ix, ixm
+integer :: nv, iv0, ie1, if1, ix, ixm
 real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), l1sq, l2sq, l3sq, a
 
 ! Number of dual cells (vertices) on this grid
@@ -1163,7 +1288,7 @@ nv = grid%nvert(igrid)
 
 ! Number of coefficients to define element - depends on
 ! shape of dual cell.
-self%ncvd(1:nv) = 2*grid%neofv(:,igrid)
+self%ncvd(1:nv) = 2*grid%neofv(1:nv,igrid)
 
 
 ! Loop over dual cells
@@ -1239,10 +1364,10 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: ne, ie0, iv1, iv2, offset(2), ixf, if1, ixv, nev1, &
+integer :: ne, ie0, iv1, iv2, offset(2), ixf, if1, ixv, nev1, &
            ixe, ixc, ixe1, ixf1, ixf2, ixcp, ix, i1, i2, ie1
 real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), x3(3), l1, sgncrc, atot, &
-          l1sq, l2sq, l3sq, a, sum1, sum2, contrib, c00, sg
+                        l1sq, l2sq, l3sq, a, sum1, sum2, contrib, c00, sg
 
 ! Number of edges on this grid
 ne = grid%nedge(igrid)
@@ -1289,7 +1414,7 @@ do ie0 = 1, ne
     ! Is circulation positive or negative for dual cell iv1 ?
     if (ixv == 1) THEN
       sgncrc = -1.0d0
-    ELSE
+    else
       sgncrc = 1.0d0
     endif
 
@@ -1303,7 +1428,7 @@ do ie0 = 1, ne
 
     ! Which edge of dual cell iv1 is ie0 ?
     ixe = 1
-    do WHILE (ie0 .NE. grid%eofv(iv1,ixe,igrid))
+    do while (ie0 .NE. grid%eofv(iv1,ixe,igrid))
       ixe = ixe + 1
     enddo
 
@@ -1443,9 +1568,9 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: nf, if0, ix, ixm, ie1, iv1
+integer :: nf, if0, ix, ixm, ie1, iv1
 real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), c, &
-          l1sq, l2sq, l3sq, a, sum1
+                        l1sq, l2sq, l3sq, a, sum1
 
 nf = grid%nface(igrid)
 
@@ -1516,7 +1641,7 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: ne, ie0, ixsten, ixf, if1, ix0, ixe, nef1, off1, &
+integer :: ne, ie0, ixsten, ixf, if1, ix0, ixe, nef1, off1, &
            ixf2, ie2, ix3, ie3, ixm, ixc, ixp, ixm2, ixc2, ixp2, &
            disp, iv2, ixv
 real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), x3(3), &
@@ -1552,7 +1677,7 @@ do ie0 = 1, ne
       a1(1) = self%csp(ie0,1)
       a1(2) = self%csp(ie0,2)
       b1(1:2*nef1) = self%csp(ie0,3:2*(nef1 + 1))
-    ELSE
+    else
       off1 = 2*grid%neoff(grid%fnxte(ie0,1,igrid),igrid)
       a1(1) = -self%csp(ie0,2)
       a1(2) = -self%csp(ie0,1)
@@ -1566,7 +1691,7 @@ do ie0 = 1, ne
 
     ! Which edge of if1 is ie0 ?
     ix0 = 1
-    do WHILE (grid%eoff(if1,ix0,igrid) .NE. ie0)
+    do while (grid%eoff(if1,ix0,igrid) .NE. ie0)
       ix0 = ix0 + 1
     enddo
 
@@ -1588,7 +1713,7 @@ do ie0 = 1, ne
         a2(1) = self%csp(ie2,1)
         a2(2) = self%csp(ie2,2)
         b2(1:2*nef1) = self%csp(ie2,3:2*(nef1 + 1))
-      ELSE
+      else
         off1 = 2*grid%neoff(grid%fnxte(ie2,1,igrid),igrid)
         a2(1) = -self%csp(ie2,2)
         a2(2) = -self%csp(ie2,1)
@@ -1604,7 +1729,7 @@ do ie0 = 1, ne
       if (disp > 0) THEN
         ! Initialize sum to zero
         sum1 = 0.0d0
-      ELSE
+      else
         ! We need the product of the exterior flux contributions
         ixv = ix0 - 1
         if (ixv < 1) ixv = nef1
@@ -1728,7 +1853,7 @@ do ie0 = 1, ne
       ! Finally save the result
       if (ie2 == ie0) THEN
         self%mmass(ie0,1,igrid) = self%mmass(ie0,1,igrid) + sum1
-      ELSE
+      else
         ixsten = ixsten + 1
         self%msten(ie0,ixsten,igrid) = ie2
         self%mmass(ie0,ixsten,igrid) = sum1
@@ -1760,10 +1885,10 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: nv, nf, iv0, nev1, if1, ixv0, ixf, ixfp, nef1, &
+integer :: nv, nf, iv0, nev1, if1, ixv0, ixf, ixfp, nef1, &
            ixv, ixvm, iv1, ixe, ie1, ne1
 real(kind=kind_real) :: v1, v2, vc, long, lat, x1(3), x2(3), x3(3), &
-          sum1, l1sq, l2sq, l3sq, a, aby3
+                        sum1, l1sq, l2sq, l3sq, a, aby3
 
 nv = grid%nvert(igrid)
 
@@ -1794,7 +1919,7 @@ do iv0 = 1, nv
 
     ! Which vertex of if1 is iv0 ?
     ixv0 = 1
-    do WHILE (grid%voff(if1,ixv0,igrid) .NE. iv0)
+    do while (grid%voff(if1,ixv0,igrid) .NE. iv0)
       ixv0 = ixv0 + 1
     enddo
 
@@ -1857,7 +1982,7 @@ do if1 = 1, nf
 
     ! What is the index of face if1 relative to vertex iv1 ?
     ixf = 1
-    do WHILE (grid%fofv(iv1,ixf,igrid) .NE. if1)
+    do while (grid%fofv(iv1,ixf,igrid) .NE. if1)
       ixf = ixf + 1
     enddo
 
@@ -1883,7 +2008,7 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: ie0, ixf, if1, ne1, ix1, ix, ixv, ix2, ie2, &
+integer :: ie0, ixf, if1, ne1, ix1, ix, ixv, ix2, ie2, &
            isten, ne
 real(kind=kind_real) :: ss, w
 
@@ -1906,7 +2031,7 @@ do ie0 = 1, ne
 
     ! Which edge of face if1 is edge ie0?
     ix1 = 1
-    do WHILE (grid%eoff(if1,ix1,igrid) .NE. ie0)
+    do while (grid%eoff(if1,ix1,igrid) .NE. ie0)
       ix1 = ix1 + 1
     enddo
 
@@ -1940,10 +2065,10 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: nv, iv0, nev1, ixf, nef1, ns, ixfp, ix, iv1, &
+integer :: nv, iv0, nev1, ixf, nef1, ns, ixfp, ix, iv1, &
            ixv0, ixvm, ixvp, ixe, ixep, ie1, ixv, if1
 real(kind=kind_real) :: v1, v2, vc, long, lat, x1(3), x2(3), x3(3), &
-          l1sq, l2sq, l3sq, a, aby3, sum1
+                        l1sq, l2sq, l3sq, a, aby3, sum1
 
 nv = grid%nvert(igrid)
 
@@ -1971,7 +2096,7 @@ do iv0 = 1, nv
 
     ! Which vertex of if1 is iv0 ?
     ixv0 = 1
-    do WHILE (grid%voff(if1,ixv0,igrid) .NE. iv0)
+    do while (grid%voff(if1,ixv0,igrid) .NE. iv0)
       ixv0 = ixv0 + 1
     enddo
     ixvm = ixv0 - 1
@@ -2043,11 +2168,11 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
-INTEGER :: ne, ie0, ns, ixf, if1, nef1, iv1, nev1, &
+integer :: ne, ie0, ns, ixf, if1, nef1, iv1, nev1, &
            ie2, ixf2, ixe2, offset, offset2, ivfrst, d, &
            ip3, ip4, ip5, iq3, iq4, iq5, ixe0, ixv, ix
 real(kind=kind_real) :: flx1, flx2, flx3, flx4, flx5, crc1, crc2, crc3, crc4, crc5, &
-          extf1, extf2, extc1, extc2, sum1
+                        extf1, extf2, extc1, extc2, sum1
 
 ne = grid%nedge(igrid)
 
@@ -2068,7 +2193,7 @@ do ie0 = 1, ne
 
     ! Which edge of if1 is ie0 ?
     ixe0 = 1
-    do WHILE (grid%eoff(if1,ixe0,igrid) .NE. ie0)
+    do while (grid%eoff(if1,ixe0,igrid) .NE. ie0)
       ixe0 = ixe0 + 1
     enddo
 
@@ -2078,7 +2203,7 @@ do ie0 = 1, ne
       offset = 2
       extf1 = self%csp(ie0,1)
       extf2 = self%csp(ie0,2)
-    ELSE
+    else
       offset = 2 + 2*grid%neoff(grid%fnxte(ie0,1,igrid),igrid)
       extf1 = -self%csp(ie0,2)
       extf2 = -self%csp(ie0,1)
@@ -2095,12 +2220,12 @@ do ie0 = 1, ne
       if (d < 0) d = d + nef1
       if (d == 0) THEN
         flx1 = extf2
-      ELSE
+      else
         flx1 = 0.0d0
       endif
       if (d == nef1 - 1) THEN
         flx2 = extf1
-      ELSE
+      else
         flx2 = 0.0d0
       endif
       ip3 = 2*d + 1
@@ -2113,7 +2238,7 @@ do ie0 = 1, ne
 
       ! Which face of iv1 is if1 ?
       ixf2 = 1
-      do WHILE (grid%fofv(iv1,ixf2,igrid) .NE. if1)
+      do while (grid%fofv(iv1,ixf2,igrid) .NE. if1)
         ixf2 = ixf2 + 1
       enddo
 
@@ -2130,7 +2255,7 @@ do ie0 = 1, ne
           offset2 = 2
           extc1 = self%csd(ie2,1)
           extc2 = self%csd(ie2,2)
-        ELSE
+        else
           offset2 = 2 + 2*grid%neofv(ivfrst,igrid)
           extc1 = -self%csd(ie2,2)
           extc2 = -self%csd(ie2,1)
@@ -2142,12 +2267,12 @@ do ie0 = 1, ne
         if (d < 0) d = d + nev1
         if (d == 0) THEN
           crc2 = -extc1
-        ELSE
+        else
           crc2 = 0.0d0
         endif
         if (d == nev1 - 1) THEN
           crc1 = -extc2
-        ELSE
+        else
           crc1 = 0.0d0
         endif
         iq3 = 2*d + 1
@@ -2192,12 +2317,12 @@ implicit none
 class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 
-INTEGER :: if0, if1, igrid, igridp, nf, ix, ixp, iv1, iv2, &
+integer :: if0, if1, igrid, igridp, nf, ix, ixp, iv1, iv2, &
            n2, n, n2p, np, i, j, &
            t1, s1, s2, s3, s4, p
 
 ! Allocate array for size of operator stencil
-ALLOCATE(self%ninj(grid%nfacex,grid%ngrids-1))
+allocate(self%ninj(grid%nfacex,grid%ngrids-1))
 
 ! if ((grid%nedgex == 3*(grid%nfacex - 2)) .AND. (grid%nefmx == 6) .AND. (grid%nevmx == 3)) THEN
 if (grid%gtype == 'ih') THEN
@@ -2209,8 +2334,8 @@ if (grid%gtype == 'ih') THEN
   self%ninjmx = 7
 
   ! Allocate arrays for operator stencils and coefficients
-  ALLOCATE(self%injsten(grid%nfacex,self%ninjmx,grid%ngrids-1))
-  ALLOCATE(self%injwgt(grid%nfacex,self%ninjmx,grid%ngrids-1))
+  allocate(self%injsten(grid%nfacex,self%ninjmx,grid%ngrids-1))
+  allocate(self%injwgt(grid%nfacex,self%ninjmx,grid%ngrids-1))
 
   ! Initialize to zero
   self%injsten = 0
@@ -2237,8 +2362,8 @@ if (grid%gtype == 'ih') THEN
     enddo
   enddo
 
-!ELSEIF ((grid%nedgex == 2*grid%nfacex) .AND. (grid%nefmx == 4) .AND. (grid%nevmx == 4)) THEN
-ELSEIF (grid%gtype == 'cs') THEN
+!elseif ((grid%nedgex == 2*grid%nfacex) .AND. (grid%nefmx == 4) .AND. (grid%nevmx == 4)) THEN
+elseif (grid%gtype == 'cs') THEN
 
   ! It looks like we're on a cubed sphere grid, so build the
   ! appropriate multigrid restriction operator
@@ -2247,8 +2372,8 @@ ELSEIF (grid%gtype == 'cs') THEN
   self%ninjmx = 4
 
   ! Allocate arrays for operator stencils and coefficients
-  ALLOCATE(self%injsten(grid%nfacex,self%ninjmx,grid%ngrids-1))
-  ALLOCATE(self%injwgt(grid%nfacex,self%ninjmx,grid%ngrids-1))
+  allocate(self%injsten(grid%nfacex,self%ninjmx,grid%ngrids-1))
+  allocate(self%injwgt(grid%nfacex,self%ninjmx,grid%ngrids-1))
 
   ! Initialize to zero
   self%injsten = 0
@@ -2285,8 +2410,8 @@ ELSEIF (grid%gtype == 'cs') THEN
     enddo
   enddo
 
-!ELSEIF ((grid%nedgex == 2*grid%nfacex) .AND. (grid%nefmx == 4) .AND. (grid%nevmx == 4)) THEN
-ELSEIF (grid%gtype == 'di') THEN
+!elseif ((grid%nedgex == 2*grid%nfacex) .AND. (grid%nefmx == 4) .AND. (grid%nevmx == 4)) THEN
+elseif (grid%gtype == 'di') THEN
 
   ! It looks like we're on a diamond grid, so build the
   ! appropriate multigrid restriction operator
@@ -2295,8 +2420,8 @@ ELSEIF (grid%gtype == 'di') THEN
   self%ninjmx = 4
 
   ! Allocate arrays for operator stencils and coefficients
-  ALLOCATE(self%injsten(grid%nfacex,self%ninjmx,grid%ngrids-1))
-  ALLOCATE(self%injwgt(grid%nfacex,self%ninjmx,grid%ngrids-1))
+  allocate(self%injsten(grid%nfacex,self%ninjmx,grid%ngrids-1))
+  allocate(self%injwgt(grid%nfacex,self%ninjmx,grid%ngrids-1))
 
   ! Initialize to zero
   self%injsten = 0
@@ -2339,7 +2464,7 @@ ELSEIF (grid%gtype == 'di') THEN
     enddo
   enddo
 
-ELSE
+else
 
   print *,' '
   print *,'**********'
@@ -2349,7 +2474,7 @@ ELSE
   print *,'operator for this grid. Thank you.'
   print *,'**********'
   print *,' '
-  STOP
+  stop
 
 endif
 

@@ -55,9 +55,8 @@ type fempsgrid
 
   contains
 
-   procedure :: init
-   procedure :: alloc
-   procedure :: dealloc
+   procedure :: setup
+   procedure :: delete
 
 end type fempsgrid
 
@@ -67,7 +66,7 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine init(self,gridtype)
+subroutine setup(self,gridtype)
 
 implicit none
 class(fempsgrid), intent(inout) :: self
@@ -127,15 +126,6 @@ else
 
 endif
 
-end subroutine init
-
-! --------------------------------------------------------------------------------------------------
-
-subroutine alloc(self)
-
-implicit none
-class(fempsgrid), intent(inout) :: self
-
 ! Allocate grid variables
 allocate(self%neoff   (self%nfacex,self%ngrids))
 allocate(self%neofv   (self%nvertx,self%ngrids))
@@ -158,11 +148,11 @@ allocate(self%ldist   (self%nedgex,self%ngrids))
 allocate(self%ddist   (self%nedgex,self%ngrids))
 allocate(self%fareamin(self%ngrids))
 
-end subroutine alloc
+end subroutine setup
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine dealloc(self)
+subroutine delete(self)
 
 implicit none
 class(fempsgrid), intent(inout) :: self
@@ -189,7 +179,7 @@ deallocate(self%ldist)
 deallocate(self%ddist)
 deallocate(self%fareamin)
 
-end subroutine dealloc
+end subroutine delete
 
 ! --------------------------------------------------------------------------------------------------
 
