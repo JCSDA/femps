@@ -1,5 +1,7 @@
 module femps_grid_mod
 
+use netcdf
+
 use femps_kinds_mod
 
 implicit none
@@ -56,6 +58,7 @@ type fempsgrid
 
    procedure, public :: setup
    procedure, public :: delete
+   procedure, public :: writegrid
 
 end type fempsgrid
 
@@ -132,11 +135,11 @@ else
 endif
 
 ! Allocate grid variables
-allocate(self%neoff   (self%nfacex,self%ngrids))
-allocate(self%neofv   (self%nvertx,self%ngrids))
 allocate(self%nface   (self%ngrids))
 allocate(self%nedge   (self%ngrids))
 allocate(self%nvert   (self%ngrids))
+allocate(self%neoff   (self%nfacex,self%ngrids))
+allocate(self%neofv   (self%nvertx,self%ngrids))
 allocate(self%fnxtf   (self%nfacex,self%dimfnxtf,self%ngrids))
 allocate(self%eoff    (self%nfacex,self%dimeoff ,self%ngrids))
 allocate(self%voff    (self%nfacex,self%dimvoff ,self%ngrids))
@@ -183,6 +186,127 @@ if(allocated(self%ldist)) deallocate(self%ldist)
 if(allocated(self%ddist)) deallocate(self%ddist)
 
 end subroutine delete
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine writegrid(self,filename)
+
+implicit none
+class(fempsgrid), intent(in) :: self
+character(len=*),  intent(in) :: filename
+
+integer :: ncid, vc, varid(1000)
+integer :: ngrids_dimid, nfacex_dimid, nedgex_dimid, nvertx_dimid
+integer :: dimfnxtf_dimid, dimeoff_dimid, dimvoff_dimid, dimfnxte_dimid, &
+           dimvofe_dimid, dimfofv_dimid, dimeofv_dimid
+
+
+! Create file
+! -----------
+call nccheck( nf90_create( trim(filename), ior(NF90_NETCDF4, NF90_CLOBBER), ncid), "nf90_create" )
+
+
+! Define dimensions
+! -----------------
+call nccheck( nf90_def_dim(ncid, "ngrids",   self%ngrids,     ngrids_dimid), "nf90_def_dim ngrids"  )
+call nccheck( nf90_def_dim(ncid, "nfacex",   self%nfacex,     nfacex_dimid), "nf90_def_dim nfacex"  )
+call nccheck( nf90_def_dim(ncid, "nvertx",   self%nvertx,     nvertx_dimid), "nf90_def_dim nvertx"  )
+call nccheck( nf90_def_dim(ncid, "nedgex",   self%nedgex,     nedgex_dimid), "nf90_def_dim nedgex"  )
+call nccheck( nf90_def_dim(ncid, "dimfnxtf", self%dimfnxtf, dimfnxtf_dimid), "nf90_def_dim dimfnxtf")
+call nccheck( nf90_def_dim(ncid, "dimeoff",  self%dimeoff,   dimeoff_dimid), "nf90_def_dim dimeoff" )
+call nccheck( nf90_def_dim(ncid, "dimvoff",  self%dimvoff,   dimvoff_dimid), "nf90_def_dim dimvoff" )
+call nccheck( nf90_def_dim(ncid, "dimfnxte", self%dimfnxte, dimfnxte_dimid), "nf90_def_dim dimfnxte")
+call nccheck( nf90_def_dim(ncid, "dimvofe",  self%dimvofe,   dimvofe_dimid), "nf90_def_dim dimvofe" )
+call nccheck( nf90_def_dim(ncid, "dimfofv",  self%dimfofv,   dimfofv_dimid), "nf90_def_dim dimfofv" )
+call nccheck( nf90_def_dim(ncid, "dimeofv",  self%dimeofv,   dimeofv_dimid), "nf90_def_dim dimeofv" )
+
+
+! Define variables
+! ----------------
+vc = 1
+
+call nccheck( nf90_def_var(ncid, "nface", NF90_FLOAT, (/ ngrids_dimid /), varid(vc)), "nf90_def_var nface" ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "nedge", NF90_FLOAT, (/ ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "nvert", NF90_FLOAT, (/ ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "neoff", NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "neofv", NF90_FLOAT, (/ nvertx_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "fnxtf", NF90_FLOAT, (/ nfacex_dimid, dimfnxtf_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "eoff" , NF90_FLOAT, (/ nfacex_dimid, dimeoff_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "voff" , NF90_FLOAT, (/ nfacex_dimid, dimvoff_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "fnxte", NF90_FLOAT, (/ nedgex_dimid, dimfnxte_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "vofe" , NF90_FLOAT, (/ nedgex_dimid, dimvofe_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "fofv" , NF90_FLOAT, (/ nvertx_dimid, dimfofv_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "eofv" , NF90_FLOAT, (/ nvertx_dimid, dimeofv_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "flong", NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "flat" , NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "vlong", NF90_FLOAT, (/ nvertx_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "vlat" , NF90_FLOAT, (/ nvertx_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "farea", NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "ldist", NF90_FLOAT, (/ nedgex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "ddist", NF90_FLOAT, (/ nedgex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+
+
+! End define
+! ----------
+call nccheck( nf90_enddef(ncid), "nf90_enddef" )
+
+
+! Write variables
+! ---------------
+vc = 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nface ), "nf90_put_var nface" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nedge ), "nf90_put_var nedge" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nvert ), "nf90_put_var nvert" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%neoff ), "nf90_put_var neoff" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%neofv ), "nf90_put_var neofv" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%fnxtf ), "nf90_put_var fnxtf" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%eoff  ), "nf90_put_var eoff " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%voff  ), "nf90_put_var voff " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%fnxte ), "nf90_put_var fnxte" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%vofe  ), "nf90_put_var vofe " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%fofv  ), "nf90_put_var fofv " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%eofv  ), "nf90_put_var eofv " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%flong ), "nf90_put_var flong" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%flat  ), "nf90_put_var flat " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%vlong ), "nf90_put_var vlong" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%vlat  ), "nf90_put_var vlat " ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%farea ), "nf90_put_var farea" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ldist ), "nf90_put_var ldist" ); vc = vc + 1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ddist ), "nf90_put_var ddist" ); vc = vc + 1
+
+call nccheck ( nf90_close(ncid), "nf90_close" )
+
+end subroutine writegrid
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine nccheck(status,iam)
+
+use netcdf
+
+implicit none
+integer,                    intent (in) :: status
+character(len=*), optional, intent (in) :: iam
+
+character(len=1024) :: error_descr
+
+if(status /= nf90_noerr) then
+
+  error_descr = "NetCDF error, aborting ... "
+
+  if (present(iam)) then
+    error_descr = trim(error_descr)//", "//trim(iam)
+  endif
+
+  error_descr = trim(error_descr)//". Error code: "//trim(nf90_strerror(status))
+
+  print*, "Aborting: ", trim(error_descr)
+
+  call abort()
+
+end if
+
+end subroutine nccheck
 
 ! --------------------------------------------------------------------------------------------------
 
