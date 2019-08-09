@@ -313,7 +313,8 @@ end subroutine dual_centroid
 subroutine findinlist(i,list,nl,ix)
 
 implicit none
-integer, intent(in)    :: i, nl
+integer, intent(in)    :: i
+integer, intent(in)    :: nl
 integer, intent(inout) :: list(nl)
 integer, intent(out)   :: ix
 

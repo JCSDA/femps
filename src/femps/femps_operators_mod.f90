@@ -842,11 +842,7 @@ nf = grid%nface(igrid)
 
 ! Number of coefficients to define element - depends on
 ! shape of primal cell.
-
-print*, 'TESTING', nf, size(grid%neoff,1), size(grid%neoff,2)
-print*,
 self%ncvp(1:nf) = 2*grid%neoff(1:nf,igrid)
-
 
 ! Loop over primal cells
 do if0 = 1, nf
@@ -2066,7 +2062,7 @@ type(fempsgrid),  intent(in)    :: grid
 integer,          intent(in)    :: igrid
 
 integer :: nv, iv0, nev1, ixf, nef1, ns, ixfp, ix, iv1, &
-           ixv0, ixvm, ixvp, ixe, ixep, ie1, ixv, if1
+           ixv0, ixvm, ixvp, ixe, ixep, ie1, ixv, if1, temp(self%njsmx)
 real(kind=kind_real) :: v1, v2, vc, long, lat, x1(3), x2(3), x3(3), &
                         l1sq, l2sq, l3sq, a, aby3, sum1
 
@@ -2144,7 +2140,9 @@ do iv0 = 1, nv
       if (ixv == ixvm) sum1 = sum1 + v1*aby3
       if (ixv == ixv0) sum1 = sum1 + (1.0d0 + v2)*aby3
       ! Now include this contribution in the coefficient
-      call findinlist(iv1,self%jsten(iv0,:,igrid),self%njsmx,ix)
+      temp = self%jsten(iv0,:,igrid)
+      call findinlist(iv1,temp,self%njsmx,ix)
+      self%jsten(iv0,:,igrid) = temp
       ns = MAX(ns,ix)
       self%jstar(iv0,ix,igrid) = self%jstar(iv0,ix,igrid) + sum1/self%varea(iv1,igrid)
     enddo
@@ -2170,7 +2168,7 @@ integer,          intent(in)    :: igrid
 
 integer :: ne, ie0, ns, ixf, if1, nef1, iv1, nev1, &
            ie2, ixf2, ixe2, offset, offset2, ivfrst, d, &
-           ip3, ip4, ip5, iq3, iq4, iq5, ixe0, ixv, ix
+           ip3, ip4, ip5, iq3, iq4, iq5, ixe0, ixv, ix, temp(self%nhsmx)
 real(kind=kind_real) :: flx1, flx2, flx3, flx4, flx5, crc1, crc2, crc3, crc4, crc5, &
                         extf1, extf2, extc1, extc2, sum1
 
@@ -2290,7 +2288,10 @@ do ie0 = 1, ne
                                              / 6.0d0
 
         ! Update stencil and coefficients
-        call findinlist(ie2,self%hsten(ie0,:,igrid),self%nhsmx,ix)
+        temp = self%hsten(ie0,:,igrid)
+        call findinlist(ie2,temp,self%nhsmx,ix)
+        self%hsten(ie0,:,igrid) = temp
+        
         ns = MAX(ns,ix)
         self%hstar(ie0,ix,igrid) = self%hstar(ie0,ix,igrid) + sum1
 

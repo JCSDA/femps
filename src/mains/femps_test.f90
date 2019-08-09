@@ -10,11 +10,10 @@ use femps_inout_mod, only: readgridoprs
 !use netcdf
 
 implicit none
-type(fempsgrid) :: grid, gridread
-type(fempsoprs) :: oprs, oprsread
+type(fempsgrid) :: grid
+type(fempsoprs) :: oprs
 
 character(len=2) :: gridtype
-integer :: igrid
 
 ! Choose grid type
 ! ----------------

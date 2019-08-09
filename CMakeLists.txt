@@ -1,5 +1,5 @@
 ################################################################################
-# FEMPS 
+# FEMPS
 ################################################################################
 
 cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
@@ -74,7 +74,6 @@ endforeach()
 include_directories( ${FEMPS_INCLUDE_DIRS}
                      ${FEMPS_EXTRA_INCLUDE_DIRS} )
 
-add_subdirectory( mains )
 add_subdirectory( src )
 
 ################################################################################
