@@ -10,111 +10,71 @@ implicit none
 type(fempsgrid) :: grid
 type(fempsoprs) :: oprs
 
-integer :: npass = 10 ! Number of passes
-integer :: nf, ne, nv, if1, ipass, nprt
-real(kind=kind_real), allocatable :: psi0(:), zeta(:), psi(:), ff1(:), ff2(:), ff3(:), ff4(:), &
-                                     temp1(:), temp2(:)
-real(kind=kind_real) :: long, lat, psibar
-real(kind=kind_real) :: rms, rms_ref, rms_rel
+integer :: n, npass, nprt
+real(kind=kind_real), allocatable, dimension(:) :: zeta, psi0, psi
+real(kind=kind_real) :: psibar, rms, rms_ref, rms_rel
 
 
 ! Create a grid
 ! -------------
-call grid%setup('cs')
+call grid%setup('cs',cube=96)
 call cstestgrid(grid,1,3)
 
 
 ! Perform all the setup
 ! ---------------------
 call preliminary(grid,oprs)
-print *,'done preliminary'
 
 
-! Run a test comparing the Laplace versus inverse Laplace
-! -------------------------------------------------------
+! Problem setup
+! -------------
+npass = 10 ! Number of iterations
+nprt = 5   ! Number of values to print for testing
 
-nf = grid%nface(grid%ngrids)
-ne = grid%nedge(grid%ngrids)
-nv = grid%nvert(grid%ngrids)
-
-print *,' '
-print *,'--------------------------'
-print *,' '
-print *,'Testing mgsolve '
-print *,' '
-
-! Number of values to print for testing
-nprt = 5
-
-allocate(psi0(nf),zeta(nf),psi(nf),ff1(nf),ff2(nf),ff3(nf),ff4(nf),temp1(ne),temp2(ne))
 
 ! Set up test data
-! Large-scale part
-do if1 = 1, nf
-  long = grid%flong(if1,grid%ngrids)
-  lat = grid%flat(if1,grid%ngrids)
-  ! psi0(if1) = SIN(lat)
-  psi0(if1) = COS(lat)*SIN(long)
+! ----------------
+allocate(zeta(grid%nface(grid%ngrids)))
+allocate(psi0(grid%nface(grid%ngrids)))
+allocate(psi (grid%nface(grid%ngrids)))
+
+do n = 1, grid%nface(grid%ngrids)
+  psi0(n) = cos(grid%flat(n,grid%ngrids))*sin(grid%flong(n,grid%ngrids)) ! Large-scale part
 enddo
-! Plus small-scale part
-psi0(10) = 10.0_kind_real*psi0(10)
+psi0(10) = 10.0_kind_real*psi0(10) ! Plus small-scale part
+
 ! Remove global mean (to ensure unambiguous result)
-psibar = SUM(psi0*grid%farea(:,grid%ngrids))/SUM(grid%farea(:,grid%ngrids))
+psibar = sum(psi0*grid%farea(:,grid%ngrids))/sum(grid%farea(:,grid%ngrids))
 psi0 = psi0 - psibar
+
 ! Convert to area integrals
-ff1 = psi0*grid%farea(:,grid%ngrids)
-print *,'Original field ff1 =     ',ff1(1:nprt)
+psi0 = psi0*grid%farea(:,grid%ngrids)
+
+
+! Laplacian
+! ---------
+call laplace(grid,oprs,grid%ngrids,psi0,zeta)
+
+
+! Inverse Laplacian
+! -----------------
+call inverselaplace(grid,oprs,grid%ngrids,npass,zeta,psi)
+
+
+! Print output
+! ------------
 print *,' '
-
-! Calculate laplacian
-call laplace(grid,oprs,ff1,zeta,grid%ngrids,nf,ne)
-
-
-! Now invert laplacian to check we get back to where we started
-
-! Initialize result to zero
-! Note psi will be stream function times grid cell area
-psi = 0.0_kind_real
-temp2 = 0.0_kind_real
-
-! Iterate several passes
-do ipass = 1, npass
-
-  print *,'Pass ',ipass
-
-  ! Compute residual based on latest estimate
-  call massL(oprs,psi,ff2,grid%ngrids,nf)
-
-  call Ddual1(grid,ff2,temp1,grid%ngrids,nf,ne)
-
-  ! Improve the estimate temp2 that we obtained in the previous pass
-  call massMinv(grid,oprs,temp1,temp2,grid%ngrids,ne,4)
-
-  call Dprimal2(grid,oprs,temp2,ff3,grid%ngrids,ne,nf)
-
-  ! Residual
-  ff4 = zeta - ff3
-
-  ! Now solve the approximate Poisson equation
-  ! D2 xminv D1bar L psi' = residual
-  call mgsolve(grid,oprs,ff3,ff4,grid%ngrids)
-
-  ! And increment best estimate
-  ! *** We could think about adding beta*ff3 here and tuning beta for optimal convergence ***
-  psi = psi + ff3
-
-  ! Remove global mean (to ensure unambiguous result)
-  psibar = SUM(psi)/SUM(grid%farea(:,grid%ngrids))
-  psi = psi - psibar*grid%farea(:,grid%ngrids)
-
-  print *,'Original field ff1      = ',ff1(1:nprt)
-  print *,'Soln of Poisson eqn psi = ', psi(1:nprt)
-  ff4 = (ff1-psi)/grid%farea(:,grid%ngrids)
-  rms = sqrt(sum(ff4*ff4)/nf)
-  print *,'RMS err in global problem = ', rms
-  print *,' '
-
+do n = 1,nprt
+  print *,'Original field psi0     = ', psi0(n)
+  print *,'Soln of Poisson eqn psi = ', psi(n)
 enddo
+psi0 = psi0/grid%farea(:,grid%ngrids)
+psi  = psi/grid%farea(:,grid%ngrids)
+
+print *,' '
+rms = sqrt(sum((psi0-psi)*(psi0-psi))/grid%nface(grid%ngrids))
+print *,'RMS err in global problem = ', rms
+
 
 ! Clean up
 ! --------
@@ -122,10 +82,10 @@ call oprs%delete()
 call grid%delete()
 
 
+! Test pass/fail
+! --------------
 rms_ref = 5.632313769573670E-004_kind_real
 rms_rel = (rms - rms_ref)
-
-print *,'done testpoisson'
 
 if (rms_rel > 1.0e-16_kind_real) then
   print*, ' '
@@ -135,7 +95,10 @@ if (rms_rel > 1.0e-16_kind_real) then
   print*, 'Failed with requirement relative difference <= 1.0e-16'
   print*, ' '
   stop 1
+else
+  print*, 'Test passed'
 endif
 
+deallocate(zeta, psi0, psi)
 
 end program fempoisson_driver

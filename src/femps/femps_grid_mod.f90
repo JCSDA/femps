@@ -22,7 +22,7 @@ type fempsgrid
   integer, allocatable, dimension(:) :: nedge ! edges on each grid
   integer, allocatable, dimension(:) :: nvert ! vertices on each edge
 
-  integer :: n0 = 3
+  integer :: n0
 
   integer :: nefmx, nevmx                       ! maximum in neoff and neofv
   integer, allocatable, dimension(:,:) :: neoff ! number of edges and vertices of each face on each grid
@@ -65,11 +65,12 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine setup(self,gridtype)
+subroutine setup(self,gridtype,cube)
 
 implicit none
-class(fempsgrid), intent(inout) :: self
-character(len=2), intent(in)    :: gridtype
+class(fempsgrid),  intent(inout) :: self
+character(len=2),  intent(in)    :: gridtype
+integer, optional, intent(in)    :: cube
 
 integer :: nx
 
@@ -81,6 +82,11 @@ if (self%gtype=='cs') then
   ! -----------------------------------------
   self%ngrids = 6
 
+  if (.not.present(cube)) then
+    self%n0 = 3 !Default value (c96)
+  else
+    self%n0 = cube/2**5
+  endif
   nx = self%n0*(2**(self%ngrids-1))
 
   self%nfacex = 6*nx*nx

@@ -7,9 +7,9 @@ use femps_operators_mod
 use femps_kinds_mod
 
 implicit none
-private
 
-public preliminary, laplace, massL, Ddual1, massMinv, Dprimal2, mgsolve
+private
+public preliminary, laplace, inverselaplace
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -24,8 +24,6 @@ subroutine preliminary(grid,oprs)
 implicit none
 type(fempsgrid), intent(inout) :: grid
 type(fempsoprs), intent(inout) :: oprs
-
-integer :: igrid
 
 ! Build the operators
 ! -------------------
@@ -50,12 +48,10 @@ call buildhlump(grid,oprs)
 ! And build a local operator to approximate the inverse of M
 ! ----------------------------------------------------------
 call buildxminv(grid,oprs)
-print *,'Lumped J, M and H and approximate M-inverse created'
 
 ! Build coefficients used in Laplacian operator on all grids
 ! ----------------------------------------------------------
 call buildlap(grid,oprs)
-print *,'Laplace coefficients created'
 
 end subroutine preliminary
 
@@ -78,16 +74,15 @@ real(kind=kind_real) :: temp, cd2, cm, cd1, cl
 ! Under-relaxation parameter. ( *** There is scope to optimize here *** )
 ! -----------------------------------------------------------------------
 do igrid = 1, grid%ngrids
-  IF (grid%nefmx == 6) THEN
+  if (grid%nefmx == 6) then
     oprs%underrel(igrid) = 0.8_kind_real
-  ELSEIF (grid%nefmx == 4) THEN
+  elseif (grid%nefmx == 4) then
     oprs%underrel(igrid) = 0.8_kind_real
-  ELSE
+  else
     print *,'Choose a sensible value for underrel in buildlap'
-    STOP
-  ENDIF
+    stop 1
+  endif
 enddo
-
 
 ! Extract diagonal coefficient of Laplacian operator
 do igrid = 1, grid%ngrids
@@ -253,7 +248,7 @@ do igrid = 1, grid%ngrids
   else
 
     print *,'option ijlump = ',ijlump,' not available in subroutine buildjlump'
-    stop
+    stop 1
 
   endif
 
@@ -347,7 +342,7 @@ do igrid = 1, grid%ngrids
   else
 
     print *,'option imlump = ',imlump,' not available in subroutine buildmlump'
-    stop
+    stop 1
 
   endif
 
@@ -475,7 +470,7 @@ do igrid = 1, grid%ngrids
   else
 
     print *,'option ihlump = ',ihlump,' not available in subroutine buildhlump'
-    stop
+    stop 1
 
   endif
 
@@ -770,10 +765,10 @@ integer :: if1, if2, ix
 real(kind=kind_real) :: wgt
 
 ! Safety check
-IF (nf2 .ne. grid%nface(igrid)) THEN
-  PRINT *,'Wrong size array in subroutine restrict'
-  STOP
-ENDIF
+if (nf2 .ne. grid%nface(igrid)) then
+  print *,'Wrong size array in subroutine restrict'
+  stop 1
+endif
 
 do if2 = 1, nf2
   f2(if2) = 0.0_kind_real
@@ -814,10 +809,10 @@ integer :: if1, if2, ix, igridp
 real(kind=kind_real) :: wgt, f2if2, temp1(nf1), temp2(nf2)
 
 ! Safety check
-IF (nf2 .ne. grid%nface(igrid)) THEN
-  PRINT *,'Wrong size array in subroutine prolong'
-  STOP
-ENDIF
+if (nf2 .ne. grid%nface(igrid)) then
+  print *,'Wrong size array in subroutine prolong'
+  stop 1
+endif
 
 igridp = igrid + 1
 temp2(1:nf2) = f2(1:nf2)/grid%farea(1:nf2,igrid)
@@ -836,7 +831,7 @@ end subroutine prolong
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine laplace(grid,oprs,f,hf,igrid,nf,ne)
+subroutine laplace(grid,oprs,igrid,f,hf)
 
 ! To apply the Laplacian operator to the input field f,
 ! on grid igrid, the result appearing in the output field hf.
@@ -845,25 +840,92 @@ subroutine laplace(grid,oprs,f,hf,igrid,nf,ne)
 implicit none
 type(fempsgrid),      intent(in)  :: grid
 type(fempsoprs),      intent(in)  :: oprs
-integer,              intent(in)  :: igrid, nf, ne
-real(kind=kind_real), intent(in)  :: f(nf)
-real(kind=kind_real), intent(out) :: hf(nf)
+integer,              intent(in)  :: igrid
+real(kind=kind_real), intent(in)  :: f(grid%nface(igrid))
+real(kind=kind_real), intent(out) :: hf(grid%nface(igrid))
 
-real(kind=kind_real) :: temp1(nf), temp2(ne), temp3(ne)
+real(kind=kind_real) :: temp1(grid%nface(igrid)), temp2(grid%nedge(igrid)), temp3(grid%nedge(igrid))
 integer :: niter
 
-call massL(oprs,f,temp1,igrid,nf)
-call Ddual1(grid,temp1,temp2,igrid,nf,ne)
+call massL(oprs,f,temp1,igrid,grid%nface(igrid))
+call Ddual1(grid,temp1,temp2,igrid,grid%nface(igrid),grid%nedge(igrid))
 niter = -20
-call massMinv(grid,oprs,temp2,temp3,igrid,ne,niter)
-call Dprimal2(grid,oprs,temp3,hf,igrid,ne,nf)
-
+call massMinv(grid,oprs,temp2,temp3,igrid,grid%nedge(igrid),niter)
+call Dprimal2(grid,oprs,temp3,hf,igrid,grid%nedge(igrid),grid%nface(igrid))
 
 end subroutine laplace
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine xlaplace(grid,oprs,f,hf,igrid,nf,ne)
+subroutine inverselaplace(grid,oprs,igrid,npass,hf,f)
+
+! To apply the inverse Laplacian operator to the input field hf,
+! on grid igrid, the result appearing in the output field f.
+! Note f and hf are area integrals (2-forms).
+
+implicit none
+type(fempsgrid),      intent(in)  :: grid
+type(fempsoprs),      intent(in)  :: oprs
+integer,              intent(in)  :: igrid
+integer,              intent(in)  :: npass
+real(kind=kind_real), intent(in)  :: hf(grid%nface(igrid))
+real(kind=kind_real), intent(out) :: f(grid%nface(igrid))
+
+integer :: nf, ne, nv, ipass
+real(kind=kind_real) :: beta = 1.0_kind_real, fbar
+real(kind=kind_real), allocatable, dimension(:) :: ff1, ff2, ff3, ff4, temp1, temp2
+
+nf = grid%nface(grid%ngrids)
+ne = grid%nedge(grid%ngrids)
+nv = grid%nvert(grid%ngrids)
+
+allocate(ff1  (nf))
+allocate(ff2  (nf))
+allocate(ff3  (nf))
+allocate(ff4  (nf))
+allocate(temp1(ne))
+allocate(temp2(ne))
+
+f = 0.0_kind_real
+temp2 = 0.0_kind_real
+
+! Iterate several passes
+do ipass = 1, npass
+
+  ! Compute residual based on latest estimate
+  call massL(oprs,f,ff2,grid%ngrids,nf)
+
+  call Ddual1(grid,ff2,temp1,grid%ngrids,nf,ne)
+
+  ! Improve the estimate temp2 that we obtained in the previous pass
+  call massMinv(grid,oprs,temp1,temp2,grid%ngrids,ne,4)
+
+  call Dprimal2(grid,oprs,temp2,ff3,grid%ngrids,ne,nf)
+
+  ! Residual
+  ff4 = hf - ff3
+
+  ! Now solve the approximate Poisson equation
+  ! D2 xminv D1bar L psi' = residual
+  call mgsolve(grid,oprs,ff3,ff4,grid%ngrids)
+
+  ! And increment best estimate
+  ! *** We could think about adding beta*ff3 here and tuning beta for optimal convergence ***
+  f = f + beta*ff3
+
+  ! Remove global mean (to ensure unambiguous result)
+  fbar = SUM(f)/SUM(grid%farea(:,grid%ngrids))
+  f = f - fbar*grid%farea(:,grid%ngrids)
+
+enddo
+
+deallocate(ff1,ff2,ff3,ff4,temp1,temp2)
+
+end subroutine inverselaplace
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine xlaplace(grid,oprs,igrid,f,hf)
 
 ! To apply the APPROXIMATE Laplacian operator to the input field f,
 ! on grid igrid, the result appearing in the output field hf.
@@ -872,22 +934,22 @@ subroutine xlaplace(grid,oprs,f,hf,igrid,nf,ne)
 implicit none
 type(fempsgrid),      intent(in)  :: grid
 type(fempsoprs),      intent(in)  :: oprs
-integer,              intent(in)  :: igrid, nf, ne
-real(kind=kind_real), intent(in)  :: f(nf)
-real(kind=kind_real), intent(out) :: hf(nf)
+integer,              intent(in)  :: igrid
+real(kind=kind_real), intent(in)  :: f(grid%nface(igrid))
+real(kind=kind_real), intent(out) :: hf(grid%nface(igrid))
 
-real(kind=kind_real) :: temp1(nf), temp2(ne), temp3(ne)
+real(kind=kind_real) :: temp1(grid%nface(igrid)), temp2(grid%nedge(igrid)), temp3(grid%nedge(igrid))
 
-call massL(oprs,f,temp1,igrid,nf)
-call Ddual1(grid,temp1,temp2,igrid,nf,ne)
-call approxMinv(oprs,temp2,temp3,igrid,ne)
-call Dprimal2(grid,oprs,temp3,hf,igrid,ne,nf)
+call massL(oprs,f,temp1,igrid,grid%nface(igrid))
+call Ddual1(grid,temp1,temp2,igrid,grid%nface(igrid),grid%nedge(igrid))
+call approxMinv(oprs,temp2,temp3,igrid,grid%nedge(igrid))
+call Dprimal2(grid,oprs,temp3,hf,igrid,grid%nedge(igrid),grid%nface(igrid))
 
 end subroutine xlaplace
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine residual(grid,oprs,f,rhs,res,igrid,nf,ne)
+subroutine residual(grid,oprs,f,rhs,res,igrid,nf)
 
 ! Compute the residual res in the approximate Poisson equation on grid igrid
 ! when f is the input field and rhs is the right hand side. Note that
@@ -896,11 +958,11 @@ subroutine residual(grid,oprs,f,rhs,res,igrid,nf,ne)
 implicit none
 type(fempsgrid),      intent(in)  :: grid
 type(fempsoprs),      intent(in)  :: oprs
-integer,              intent(in)  :: igrid, nf, ne
+integer,              intent(in)  :: igrid, nf
 real(kind=kind_real), intent(in)  :: f(nf), rhs(nf)
 real(kind=kind_real), intent(out) :: res(nf)
 
-call xlaplace(grid,oprs,f,res,igrid,nf,ne)
+call xlaplace(grid,oprs,igrid,f,res)
 res = rhs - res
 !print *,'     residual: ',res(1:5)
 
@@ -908,7 +970,7 @@ end subroutine residual
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine relax(grid,oprs,f,rhs,igrid,nf,ne,niter)
+subroutine relax(grid,oprs,f,rhs,igrid,nf,niter)
 
 ! To carry out niter Jacobi relaxation iterations for the multigrid
 ! solver on grid igrid
@@ -916,7 +978,7 @@ subroutine relax(grid,oprs,f,rhs,igrid,nf,ne,niter)
 implicit none
 type(fempsgrid),      intent(in)    :: grid
 type(fempsoprs),      intent(in)    :: oprs
-integer,              intent(in)    :: igrid, nf, ne, niter
+integer,              intent(in)    :: igrid, nf, niter
 real(kind=kind_real), intent(in)    :: rhs(nf)
 real(kind=kind_real), intent(inout) :: f(nf)
 
@@ -928,7 +990,7 @@ allocate(res(nf), finc(nf))
 
 u = oprs%underrel(igrid)
 do iter = 1, niter
-  call residual(grid,oprs,f,rhs,res,igrid,nf,ne)
+  call residual(grid,oprs,f,rhs,res,igrid,nf)
   finc = res/oprs%lapdiag(1:nf,igrid)
   f = f + u*finc
 enddo
@@ -983,10 +1045,10 @@ do jgrid = grid%ngrids-1, grid%ngrids-ng+1, -1
   ne2 = grid%nedge(jgrid)
 
   ! Relax on grid jgridp
-  call relax(grid,oprs,ff(1,jgridp),rf(1,jgridp),jgridp,nf1,ne1,niter)
+  call relax(grid,oprs,ff(1,jgridp),rf(1,jgridp),jgridp,nf1,niter)
 
   ! Calculate residual on jgridp
-  call residual(grid,oprs,ff(1,jgridp),rf(1,jgridp),temp1,jgridp,nf1,ne1)
+  call residual(grid,oprs,ff(1,jgridp),rf(1,jgridp),temp1,jgridp,nf1)
 
   ! Restrict residual to jgrid
   call restrict(grid,oprs,temp1,nf1,rf(1,jgrid),nf2,jgrid)
@@ -1001,7 +1063,7 @@ jgrid = grid%ngrids-ng+1
 nf1 = grid%nface(jgrid)
 ne1 = grid%nedge(jgrid)
 ff(1:nf1,jgrid) = 0.0_kind_real
-call relax(grid,oprs,ff(1,jgrid),rf(1,jgrid),jgrid,nf1,ne1,niterc)
+call relax(grid,oprs,ff(1,jgrid),rf(1,jgrid),jgrid,nf1,niterc)
 
 ! Ascending part of V-cycle
 do jgrid = grid%ngrids-ng+1, grid%ngrids-1
@@ -1019,7 +1081,7 @@ do jgrid = grid%ngrids-ng+1, grid%ngrids-1
   ff(1:nf1,jgridp) = ff(1:nf1,jgridp) + temp1(1:nf1)
 
   ! Relax on grid jgridp
-  call relax(grid,oprs,ff(1,jgridp),rf(1,jgridp),jgridp,nf1,ne1,niter)
+  call relax(grid,oprs,ff(1,jgridp),rf(1,jgridp),jgridp,nf1,niter)
 
 enddo
 
@@ -1029,7 +1091,7 @@ phi = phi + ff(:,grid%ngrids)
 !  ! For diagnostics
 !  nf1 = grid%nface(grid%ngrids)
 !  ne1 = grid%nedge(grid%ngrids)
-!  call residual(grid,oprs,phi,rr,temp1,grid%ngrids,nf1,ne1)
+!  call residual(grid,oprs,phi,rr,temp1,grid%ngrids,nf1)
 !  print *,'     RMS residual in mgsolve = ',SQRT(SUM(temp1*temp1)/nf1)
 
 deallocate(ff,rf)
