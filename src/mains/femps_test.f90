@@ -4,7 +4,6 @@ use femps_grid_mod
 use femps_operators_mod
 use femps_testgrid_mod
 use femps_solve_mod, only: preliminary, testpoisson
-use femps_inout_mod, only: readgridoprs
 
 !use mpi
 !use netcdf
@@ -28,10 +27,12 @@ if (gridtype == 'cs') then
   call cstestgrid(grid,1,3)
 endif
 
+
 ! Build the operators
 ! -------------------
 call oprs%setup(grid)
 call oprs%build(grid)
+call oprs%pdelete()
 
 
 ! Perform all the setup
@@ -44,6 +45,12 @@ print *,'done preliminary'
 ! -----------------------
 call testpoisson(grid,oprs)
 print *,'done testpoisson'
+
+
+! Clean up
+! --------
+call oprs%delete()
+call grid%delete()
 
 
 end program fempoisson_driver

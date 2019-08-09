@@ -70,31 +70,31 @@ real(kind=kind_real) :: pi,tln,tlt,r
 ! To convert cartesian coordinates to longitude and latitude
 ! ----------------------------------------------------------
 
-pi=4.0d0*atan(1.0d0)
+pi=4.0_kind_real*atan(1.0_kind_real)
 
-if (x.eq.0.0d0) then
-  if (y.ge.0.0d0) then
-    long=0.5d0*pi
+if (x.eq.0.0_kind_real) then
+  if (y.ge.0.0_kind_real) then
+    long=0.5_kind_real*pi
   else
-    long=1.5d0*pi
+    long=1.5_kind_real*pi
   endif
 else
   tln=y/x
   long=atan(tln)
-  if (x.lt.0.0d0) then
+  if (x.lt.0.0_kind_real) then
     long=long+pi
   endif
-  if (long.lt.0.0d0) then
-    long=long+2.0d0*pi
+  if (long.lt.0.0_kind_real) then
+    long=long+2.0_kind_real*pi
   endif
 endif
 
 r=sqrt(x*x+y*y)
-if (r.eq.0.0d0) then
-  if (z.gt.0.0d0) then
-    lat=0.5d0*pi
+if (r.eq.0.0_kind_real) then
+  if (z.gt.0.0_kind_real) then
+    lat=0.5_kind_real*pi
   else
-    lat=-0.5d0*pi
+    lat=-0.5_kind_real*pi
   endif
 else
   tlt=z/r
@@ -119,16 +119,18 @@ end subroutine xyz2ll_vec
 
 subroutine starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,area)
 
+implicit none
+real(kind=kind_real), intent(in)  :: x0, x1, x2
+real(kind=kind_real), intent(in)  :: y0, y1, y2
+real(kind=kind_real), intent(in)  :: z0, z1, z2
+real(kind=kind_real), intent(out) :: area
+
+real(kind=kind_real) :: d0,d1,d2,s,t0,t1,t2,t3
+
 ! Calculate the area of the spherical triangle whose corners
 ! have Cartesian coordinates (X0,Y0,Z0), (X1,Y1,Z1), (X2,Y2,Z2)
 ! The formula below is more robust to roundoff error than the
 ! better known sum of angle - PI formula
-
-implicit none
-
-real(kind=kind_real) x0,y0,z0,x1,y1,z1,x2,y2,z2, &
-       d0,d1,d2,s,t0,t1,t2,t3,area
-
 
 ! Distances between pairs of points
 call spdist(x0,y0,z0,x1,y1,z1,d2)
@@ -136,16 +138,16 @@ call spdist(x1,y1,z1,x2,y2,z2,d0)
 call spdist(x2,y2,z2,x0,y0,z0,d1)
 
 ! Half perimeter
-s=0.5d0*(d0+d1+d2)
+s=0.5_kind_real*(d0+d1+d2)
 
 ! Tangents
-t0 = tan(0.5d0*(s-d0))
-t1 = tan(0.5d0*(s-d1))
-t2 = tan(0.5d0*(s-d2))
-t3 = tan(0.5d0*s)
+t0 = tan(0.5_kind_real*(s-d0))
+t1 = tan(0.5_kind_real*(s-d1))
+t2 = tan(0.5_kind_real*(s-d2))
+t3 = tan(0.5_kind_real*s)
 
 ! Area
-area = 4.0d0*atan(sqrt(t0*t1*t2*t3))
+area = 4.0_kind_real*atan(sqrt(t0*t1*t2*t3))
 
 end subroutine starea2
 
@@ -153,18 +155,22 @@ end subroutine starea2
 
 subroutine spdist(x1,y1,z1,x2,y2,z2,s)
 
+implicit none
+real(kind=kind_real), intent(in)  :: x1, x2
+real(kind=kind_real), intent(in)  :: y1, y2
+real(kind=kind_real), intent(in)  :: z1, z2
+real(kind=kind_real), intent(out) :: s
+
+real(kind=kind_real) :: dx, dy, dz, ad
+
 ! Calculate the spherical distance S between two points with Cartesian
 ! coordinates (X1,Y1,Z1), (X2,Y2,Z2) on the unit sphere
-
-implicit none
-
-real(kind=kind_real) x1, y1, z1, x2, y2, z2, s, dx, dy, dz, ad
 
 dx = x2 - x1
 dy = y2 - y1
 dz = z2 - z1
 ad = sqrt(dx*dx + dy*dy + dz*dz)
-s = 2.0d0*asin(0.5d0*ad)
+s = 2.0_kind_real*asin(0.5_kind_real*ad)
 
 end subroutine spdist
 
@@ -204,7 +210,6 @@ end subroutine addtab
 subroutine centroid(grid,if0,long,lat,igrid)
 
 implicit none
-
 type(fempsgrid),      intent(in)  :: grid
 integer,              intent(in)  :: if0
 integer,              intent(in)  :: igrid
@@ -226,9 +231,9 @@ call ll2xyz(long1,lat1,x0,y0,z0)
 ! Loop over edges in turn and calculate area of triangle
 ! formed by the edge and the centre of the face
 ! Hence find area of face and centroid
-xc = 0.0d0
-yc = 0.0d0
-zc = 0.0d0
+xc = 0.0_kind_real
+yc = 0.0_kind_real
+zc = 0.0_kind_real
 do ixe = 1, grid%neoff(if0,igrid)
   ie1 = grid%eoff(if0,ixe,igrid)
   iv1 = grid%vofe(ie1,1,igrid)
@@ -240,7 +245,7 @@ do ixe = 1, grid%neoff(if0,igrid)
   lat1 = grid%vlat(iv2,igrid)
   call ll2xyz(long1,lat1,x2,y2,z2)
   call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,a)
-  aby3 = a/3.0d0
+  aby3 = a/3.0_kind_real
   xc = xc + (x0 + x1 + x2)*aby3
   yc = yc + (y0 + y1 + y2)*aby3
   zc = zc + (z0 + z1 + z2)*aby3
@@ -279,9 +284,9 @@ call ll2xyz(long1,lat1,x0,y0,z0)
 ! Loop over edges in turn and calculate area of triangle
 ! formed by the edge and the centre of the dual cell
 ! Hence find area of dual cell and centroid
-xc = 0.0d0
-yc = 0.0d0
-zc = 0.0d0
+xc = 0.0_kind_real
+yc = 0.0_kind_real
+zc = 0.0_kind_real
 do ixe = 1, grid%neofv(iv0,igrid)
   ie1 = grid%eofv(iv0,ixe,igrid)
   iv1 = grid%fnxte(ie1,1,igrid)
@@ -293,7 +298,7 @@ do ixe = 1, grid%neofv(iv0,igrid)
   lat1 = grid%flat(iv2,igrid)
   call ll2xyz(long1,lat1,x2,y2,z2)
   call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,a)
-  aby3 = a/3.0d0
+  aby3 = a/3.0_kind_real
   xc = xc + (x0 + x1 + x2)*aby3
   yc = yc + (y0 + y1 + y2)*aby3
   zc = zc + (z0 + z1 + z2)*aby3
@@ -359,7 +364,7 @@ l3sq = (x1(1) - x2(1))**2 + (x1(2) - x2(2))**2 + (x1(3) - x2(3))**2
 a = sqrt(l1sq)
 b = sqrt(l2sq)
 c = sqrt(l3sq)
-area = 0.25d0*sqrt((a + b + c)*(b + c - a)*(c + a - b)*(a + b - c))
+area = 0.25_kind_real*sqrt((a + b + c)*(b + c - a)*(c + a - b)*(a + b - c))
 
 end subroutine triangle
 

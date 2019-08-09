@@ -57,8 +57,8 @@ if (present(nsmooth_in)) nsmooth = nsmooth_in
 
 ! Constants
 ! ---------
-piby4 = ATAN(1.0d0)
-pi = 4.0d0*piby4
+piby4 = ATAN(1.0_kind_real)
+pi = 4.0_kind_real*piby4
 
 
 ! Generate the grid
@@ -68,7 +68,7 @@ DO igrid = 1, grid%ngrids
 ! Size of panels on this grid
 n = grid%n0*(2**(igrid-1))
 n2 = n*n
-dlambda = 0.5d0*pi/n
+dlambda = 0.5_kind_real*pi/n
 
 grid%nface(igrid) = 6*n2
 grid%nedge(igrid) = 2*grid%nface(igrid)
@@ -78,12 +78,12 @@ grid%nvert(igrid) = grid%nface(igrid) + 2
 ! Loop over vertices/faces of one panel
 DO j = 1, n
   lambda2 = (j-1)*dlambda - piby4
-  lambdaf2 = (j-0.5d0)*dlambda - piby4
+  lambdaf2 = (j-0.5_kind_real)*dlambda - piby4
   t2 = TAN(lambda2)
   tf2 = TAN(lambdaf2)
   DO i = 1, n
     lambda1 = (i-1)*dlambda - piby4
-    lambdaf1 = (i-0.5d0)*dlambda - piby4
+    lambdaf1 = (i-0.5_kind_real)*dlambda - piby4
     t1 = TAN(lambda1)
     tf1 = TAN(lambdaf1)
 
@@ -92,7 +92,7 @@ DO j = 1, n
 !   Index of vertex
     ixv = (j-1)*n + i
 !   Cartesian coordinates of vertex
-    x1 = 1.0d0/SQRT(1.0d0 + t1*t1 + t2*t2)
+    x1 = 1.0_kind_real/SQRT(1.0_kind_real + t1*t1 + t2*t2)
     y1 = x1*t1
     z1 = x1*t2
 !   Lat long coordinates of vertex
@@ -100,7 +100,7 @@ DO j = 1, n
     grid%vlong(ixv,igrid) = long
     grid%vlat(ixv,igrid) = lat
 !   Cartesian coordinates of face
-    xf1 = 1.0d0/SQRT(1.0d0 + tf1*tf1 + tf2*tf2)
+    xf1 = 1.0_kind_real/SQRT(1.0_kind_real + tf1*tf1 + tf2*tf2)
     yf1 = xf1*tf1
     zf1 = xf1*tf2
 !   Lat long coordinates of face
@@ -354,7 +354,7 @@ t2 = TAN(lambda2)
 lambda1 = - piby4
 t1 = TAN(lambda1)
 ! Cartesian coordinates of vertex
-x1 = 1.0d0/SQRT(1.0d0 + t1*t1 + t2*t2)
+x1 = 1.0_kind_real/SQRT(1.0_kind_real + t1*t1 + t2*t2)
 y1 = x1*t1
 z1 = x1*t2
 ! Lat long coordinates of vertex
@@ -434,9 +434,9 @@ DO igrid = 1, grid%ngrids
       ! First locate face centres at barycentres of
       ! surrounding vertices
       DO if1 = 1, grid%nface(igrid)
-        xc = 0.0d0
-        yc = 0.0d0
-        zc = 0.0d0
+        xc = 0.0_kind_real
+        yc = 0.0_kind_real
+        zc = 0.0_kind_real
         DO i = 1, 4
           ixv = grid%voff(if1,i,igrid)
           long = grid%vlong(ixv,igrid)
@@ -446,7 +446,7 @@ DO igrid = 1, grid%ngrids
           yc = yc + y1
           zc = zc + z1
         ENDDO
-        rmag = 1.0d0/SQRT(xc*xc + yc*yc + zc*zc)
+        rmag = 1.0_kind_real/SQRT(xc*xc + yc*yc + zc*zc)
         xc = xc*rmag
         yc = yc*rmag
         zc = zc*rmag
@@ -458,9 +458,9 @@ DO igrid = 1, grid%ngrids
       ! Next relocate vertices at barycentres of
       ! surrounding face centres - needed for H operator
       DO iv1 = 1, grid%nvert(igrid)
-        xc = 0.0d0
-        yc = 0.0d0
-        zc = 0.0d0
+        xc = 0.0_kind_real
+        yc = 0.0_kind_real
+        zc = 0.0_kind_real
         DO i = 1, grid%neofv(iv1,igrid)
           if1 = grid%fofv(iv1,i,igrid)
           long = grid%flong(if1,igrid)
@@ -470,7 +470,7 @@ DO igrid = 1, grid%ngrids
           yc = yc + y1
           zc = zc + z1
         ENDDO
-        rmag = 1.0d0/SQRT(xc*xc + yc*yc + zc*zc)
+        rmag = 1.0_kind_real/SQRT(xc*xc + yc*yc + zc*zc)
         xc = xc*rmag
         yc = yc*rmag
         zc = zc*rmag
@@ -512,7 +512,7 @@ DO igrid = 1, grid%ngrids
     lat = grid%flat(if1,igrid)
     CALL ll2xyz(long,lat,x0,y0,z0)
 !   Compute face area
-    aface = 0.0d0
+    aface = 0.0_kind_real
     DO i = 1, 4
       ie1 = grid%eoff(if1,i,igrid)
       ixv = grid%vofe(ie1,1,igrid)
@@ -534,11 +534,11 @@ DO igrid = 1, grid%ngrids
 
 ! Tabulate lengths of edges and distances between face centres
 ! across each edge
-  lmn=5.0D0
-  lmx=0.0D0
-  dmn=5.0D0
-  dmx=0.0D0
-  dav=0.0D0
+  lmn=5.0_kind_real
+  lmx=0.0_kind_real
+  dmn=5.0_kind_real
+  dmx=0.0_kind_real
+  dav=0.0_kind_real
   DO ie0 = 1, grid%nedge(igrid)
 !   Vertices at ends of this edge
     iv1 = grid%vofe(ie0,1,igrid)
@@ -610,7 +610,7 @@ DO igrid = 1, grid%ngrids
            + y0*(d1z*d2x - d1x*d2z) &
            + z0*(d1x*d2y - d1y*d2x)
         theta = ATAN2(sn,cs)
-        IF ((theta < thetamin) .AND. (theta > 0.0d0)) THEN
+        IF ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
           ixmin = ix2
           ifmin = if2
           thetamin = theta
@@ -672,7 +672,7 @@ DO igrid = 1, grid%ngrids
            + y0*(d1z*d2x - d1x*d2z) &
            + z0*(d1x*d2y - d1y*d2x)
         theta = ATAN2(sn,cs)
-        IF ((theta < thetamin) .AND. (theta > 0.0d0)) THEN
+        IF ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
           ixmin = ix2
           ifmin = if2
           thetamin = theta
@@ -745,7 +745,7 @@ DO igrid = 1, grid%ngrids
     sn = x0*(d1y*d2z - d1z*d2y) &
        + y0*(d1z*d2x - d1x*d2z) &
        + z0*(d1x*d2y - d1y*d2x)
-    IF (sn < 0.0d0) THEN
+    IF (sn < 0.0_kind_real) THEN
       ! Swap the two vertices
       grid%vofe(ie0,1,igrid) = iv2
       grid%vofe(ie0,2,igrid) = iv1

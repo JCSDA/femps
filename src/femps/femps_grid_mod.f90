@@ -12,22 +12,25 @@ type fempsgrid
 
   character(len=2) :: gtype  ! cs (cubed-sphere), ih (icosahedral hexagons), di (diamonds)
 
-  integer :: ngrids      !Number of grids in multigrid hierarchy
+  integer :: ngrids      ! Number of grids in multigrid hierarchy
 
-  integer :: nfacex      !Number of faces on each grid
-  integer :: nedgex      !Number of edges on each grid
-  integer :: nvertx      !Number of vertices on each edge
+  integer :: nfacex      ! Number of faces on each grid
+  integer :: nedgex      ! Number of edges on each grid
+  integer :: nvertx      ! Number of vertices on each edge
 
-  integer, allocatable, dimension(:) :: nface, nedge, nvert
+  integer, allocatable, dimension(:) :: nface ! faces on each grid
+  integer, allocatable, dimension(:) :: nedge ! edges on each grid
+  integer, allocatable, dimension(:) :: nvert ! vertices on each edge
 
   integer :: n0 = 3
 
-  integer, allocatable, dimension(:,:) :: neoff !number of edges and vertices of each face on each grid
-  integer, allocatable, dimension(:,:) :: neofv !number of edges of each vertex on each grid
+  integer :: nefmx, nevmx                       ! maximum in neoff and neofv
+  integer, allocatable, dimension(:,:) :: neoff ! number of edges and vertices of each face on each grid
+  integer, allocatable, dimension(:,:) :: neofv ! number of edges of each vertex on each grid
 
   ! Dimensions for the following arrays
   ! -----------------------------------
-  integer :: dimfnxtf, dimeoff, dimvoff, dimfnxte, dimvofe, dimfofv, dimeofv  !*
+  integer, private :: dimfnxtf, dimeoff, dimvoff, dimfnxte, dimvofe, dimfofv, dimeofv
 
   ! Connectivity
   ! ------------
@@ -49,14 +52,10 @@ type fempsgrid
   real(kind=kind_real), allocatable, dimension(:,:) :: ldist ! primal edge length, i.e. distance between neighbouring vertices
   real(kind=kind_real), allocatable, dimension(:,:) :: ddist ! dual edge length, i.e. distance between neighbouring face centres
 
-  real(kind=kind_real), allocatable, dimension(:) :: fareamin !*
-
-  integer :: nefmx, nevmx  !*
-
   contains
 
-   procedure :: setup
-   procedure :: delete
+   procedure, public :: setup
+   procedure, public :: delete
 
 end type fempsgrid
 
@@ -146,7 +145,6 @@ allocate(self%vlat    (self%nvertx,self%ngrids))
 allocate(self%farea   (self%nfacex,self%ngrids))
 allocate(self%ldist   (self%nedgex,self%ngrids))
 allocate(self%ddist   (self%nedgex,self%ngrids))
-allocate(self%fareamin(self%ngrids))
 
 end subroutine setup
 
@@ -158,26 +156,25 @@ implicit none
 class(fempsgrid), intent(inout) :: self
 
 ! Deallocate grid variables
-deallocate(self%neoff)
-deallocate(self%neofv)
-deallocate(self%nface)
-deallocate(self%nedge)
-deallocate(self%nvert)
-deallocate(self%fnxtf)
-deallocate(self%eoff)
-deallocate(self%voff)
-deallocate(self%fnxte)
-deallocate(self%vofe)
-deallocate(self%fofv)
-deallocate(self%eofv)
-deallocate(self%flong)
-deallocate(self%flat)
-deallocate(self%vlong)
-deallocate(self%vlat)
-deallocate(self%farea)
-deallocate(self%ldist)
-deallocate(self%ddist)
-deallocate(self%fareamin)
+if(allocated(self%nface)) deallocate(self%nface)
+if(allocated(self%nedge)) deallocate(self%nedge)
+if(allocated(self%nvert)) deallocate(self%nvert)
+if(allocated(self%neoff)) deallocate(self%neoff)
+if(allocated(self%neofv)) deallocate(self%neofv)
+if(allocated(self%fnxtf)) deallocate(self%fnxtf)
+if(allocated(self%eoff )) deallocate(self%eoff )
+if(allocated(self%voff )) deallocate(self%voff )
+if(allocated(self%fnxte)) deallocate(self%fnxte)
+if(allocated(self%vofe )) deallocate(self%vofe )
+if(allocated(self%fofv )) deallocate(self%fofv )
+if(allocated(self%eofv )) deallocate(self%eofv )
+if(allocated(self%flong)) deallocate(self%flong)
+if(allocated(self%flat )) deallocate(self%flat )
+if(allocated(self%vlong)) deallocate(self%vlong)
+if(allocated(self%vlat )) deallocate(self%vlat )
+if(allocated(self%farea)) deallocate(self%farea)
+if(allocated(self%ldist)) deallocate(self%ldist)
+if(allocated(self%ddist)) deallocate(self%ddist)
 
 end subroutine delete
 

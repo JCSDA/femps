@@ -14,23 +14,24 @@ type fempsoprs
 
   ! Dimensions
   ! ----------
-  integer :: nlsmx
   integer :: nmsmx
-  integer :: njsmx
-  integer :: nhsmx
-  integer :: nrsmx
-  integer :: nrxsmx
-  integer :: nwsmx
-  integer :: ntsmx
   integer :: nxmisx
-  integer :: ninjmx
 
-  real(kind=kind_real), allocatable :: varea(:,:) !area of dual faces on each grid
+  integer, private :: nlsmx
+  integer, private :: njsmx
+  integer, private :: nhsmx
+  integer, private :: nrsmx
+  integer, private :: nrxsmx
+  integer, private :: nwsmx
+  integer, private :: ntsmx
+  integer, private :: ninjmx
 
-  integer, allocatable :: eoffin(:,:,:) !Indicates whether the normal at the j'th edge is inward or outward relative to face f
-  integer, allocatable :: eofvin(:,:,:) !Indicates whether the tangent at the j'th edge is inward or outward relative to vertex v.
+  real(kind=kind_real), allocatable, dimension(:,:) :: varea !area of dual faces on each grid
 
-  ! HODGE STAR, MASS MATRIX, AND RELATED OPERATORS
+  integer, allocatable, dimension(:,:,:) :: eoffin !Indicates whether the normal at the j'th edge is inward or outward relative to face f
+  integer, allocatable, dimension(:,:,:) :: eofvin !*Indicates whether the tangent at the j'th edge is inward or outward relative to vertex v.
+
+  ! Hodge star, mass matrix, and related operators
   ! ----------------------------------------------
   integer, allocatable, dimension(:,:) :: nlsten     ! number of faces in stencil for L mass matrix
   integer, allocatable, dimension(:,:) :: nmsten     ! number of faces in stencil for M mass matrix
@@ -64,59 +65,61 @@ type fempsoprs
   real(kind=kind_real), allocatable, dimension(:,:,:)   :: rxcoeff  ! coefficients for R transpose operator
   real(kind=kind_real), allocatable, dimension(:,:,:)   :: wcoeff   ! coefficients for W operator
   real(kind=kind_real), allocatable, dimension(:,:,:)   :: xminv    ! coefficients for approximate inverse of M
-  real(kind=kind_real), allocatable, dimension(:,:,:)   :: velcoeff ! coefficients to reconstruct velocity vector in cells
   real(kind=kind_real), allocatable, dimension(:,:,:,:) :: tcoeff   ! coefficients for T operator
 
-  real(kind=kind_real), allocatable :: elong(:,:)
-  real(kind=kind_real), allocatable :: elat(:,:)
+  real(kind=kind_real), allocatable, dimension(:,:) :: elong
+  real(kind=kind_real), allocatable, dimension(:,:) :: elat
 
-  ! RESTRICTION AND PROLONGATION OPERATORS FOR MULTIGRID
+  ! Restriction and prolongation operators for multigrid
   ! ----------------------------------------------------
   integer,              allocatable, dimension(:,:)   :: ninj    ! number of faces in stencil for restriction operator
   integer,              allocatable, dimension(:,:,:) :: injsten ! stencil for restriction operator
   real(kind=kind_real), allocatable, dimension(:,:,:) :: injwgt  ! weights for restriction operator
 
-  real(kind=kind_real), allocatable :: lapdiag(:,:)
-  real(kind=kind_real), allocatable :: underrel(:)
+  real(kind=kind_real), allocatable, dimension(:,:) :: lapdiag
+  real(kind=kind_real), allocatable, dimension(:)   :: underrel
 
-  ! INFORMATION DEFINING COMPOUND ELEMENTS
+  ! Information defining compound elements
   ! --------------------------------------
-  integer :: ncvpmx, ncspmx, ncepmx, ncvdmx, ncsdmx
+  integer, private :: ncvpmx, ncspmx, ncepmx, ncvdmx, ncsdmx
 
-  integer, allocatable :: ncvp(:) ! Number of internal dofs to define a compound P0 element in space Vp.
-  integer, allocatable :: ncsp(:) ! Number of internal dofs to define a compound RT0 element in space Sp.
-  integer, allocatable :: ncep(:) ! Number of internal dofs to define a compound P1 element in space Ep.
-  integer, allocatable :: ncvd(:) ! Number of internal dofs to define a compound P0 element in space Vd.
-  integer, allocatable :: ncsd(:) ! Number of internal dofs to define a compound N0 element in space Sd.
+  integer, private, allocatable, dimension(:) :: ncvp ! Number of internal dofs to define a compound P0 element in space Vp.
+  integer, private, allocatable, dimension(:) :: ncsp ! Number of internal dofs to define a compound RT0 element in space Sp.
+  integer, private, allocatable, dimension(:) :: ncep ! Number of internal dofs to define a compound P1 element in space Ep.
+  integer, private, allocatable, dimension(:) :: ncvd ! Number of internal dofs to define a compound P0 element in space Vd.
+  integer, private, allocatable, dimension(:) :: ncsd ! Number of internal dofs to define a compound N0 element in space Sd.
 
-  real(kind=kind_real), allocatable :: cvp(:,:) ! Dofs to define a compound element in space Vp.
-  real(kind=kind_real), allocatable :: csp(:,:) ! Dofs to define a compound element in space Sp.
-  real(kind=kind_real), allocatable :: cep(:,:) ! Dofs to define a compound element in space Ep.
-  real(kind=kind_real), allocatable :: cvd(:,:) ! Dofs to define a compound element in space Vp.
-  real(kind=kind_real), allocatable :: csd(:,:) ! Dofs to define a compound element in space Sd.
+  real(kind=kind_real), private, allocatable, dimension(:,:) :: cvp ! Dofs to define a compound element in space Vp.
+  real(kind=kind_real), private, allocatable, dimension(:,:) :: csp ! Dofs to define a compound element in space Sp.
+  real(kind=kind_real), private, allocatable, dimension(:,:) :: cep ! Dofs to define a compound element in space Ep.
+  real(kind=kind_real), private, allocatable, dimension(:,:) :: cvd ! Dofs to define a compound element in space Vp.
+  real(kind=kind_real), private, allocatable, dimension(:,:) :: csd ! Dofs to define a compound element in space Sd.
 
   contains
 
-   procedure :: setup
-   procedure :: delete
-   procedure :: build
+   ! Public methods
+   procedure, public :: setup
+   procedure, public :: pdelete
+   procedure, public :: delete
+   procedure, public :: build
 
-   procedure :: ordering
-   procedure :: buildgeom
-   procedure :: buildcomp
-   procedure :: buildmat
-   procedure :: buildvp
-   procedure :: buildsp
-   procedure :: buildep
-   procedure :: buildvd
-   procedure :: buildsd
-   procedure :: buildL
-   procedure :: buildM
-   procedure :: buildR
-   procedure :: buildW
-   procedure :: buildJ
-   procedure :: buildH
-   procedure :: buildinj
+   ! Internal methods
+   procedure, private :: ordering
+   procedure, private :: buildgeom
+   procedure, private :: buildcomp
+   procedure, private :: buildmat
+   procedure, private :: buildvp
+   procedure, private :: buildsp
+   procedure, private :: buildep
+   procedure, private :: buildvd
+   procedure, private :: buildsd
+   procedure, private :: buildL
+   procedure, private :: buildM
+   procedure, private :: buildR
+   procedure, private :: buildW
+   procedure, private :: buildJ
+   procedure, private :: buildH
+   procedure, private :: buildinj
 
 end type fempsoprs
 
@@ -132,22 +135,75 @@ implicit none
 class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(in)    :: grid
 
-allocate(self%lapdiag(grid%nfacex,grid%ngrids))
-allocate(self%underrel(grid%ngrids))
+self%nlsmx  = 1
+self%nmsmx  = 2*grid%nefmx - 1
+self%njsmx  = grid%nevmx*(grid%nefmx - 2) + 1
+self%nhsmx  = 2*(grid%nevmx - 1)*(grid%nefmx - 1) - 1
+self%nrsmx  = grid%nefmx
+self%nrxsmx = grid%nevmx
+self%nwsmx  = 2*(grid%nefmx - 1)
+self%ntsmx  = grid%nefmx
 
-allocate(self%elong(grid%nedgex,grid%ngrids))
-allocate(self%elat (grid%nedgex,grid%ngrids))
 allocate(self%varea(grid%nvertx,grid%ngrids))
+allocate(self%eoffin(grid%nfacex,grid%nefmx,grid%ngrids))
+allocate(self%eofvin(grid%nvertx,grid%nevmx,grid%ngrids))
+
+! Hodge star, mass matrix, and related operators
+! ----------------------------------------------
+
+allocate(self%nlsten    (grid%nfacex,grid%ngrids))
+allocate(self%nmsten    (grid%nedgex,grid%ngrids))
+allocate(self%njsten    (grid%nvertx,grid%ngrids))
+allocate(self%nhsten    (grid%nedgex,grid%ngrids))
+allocate(self%nrsten    (grid%nfacex,grid%ngrids))
+allocate(self%nrxsten   (grid%nvertx,grid%ngrids))
+allocate(self%nwsten    (grid%nedgex,grid%ngrids))
+allocate(self%ntsten    (grid%nfacex,grid%ngrids))
+allocate(self%nxminvsten(grid%nedgex,grid%ngrids))
+
+allocate(self%lsten  (grid%nfacex,self%nlsmx,grid%ngrids))
+allocate(self%msten  (grid%nedgex,self%nmsmx,grid%ngrids))
+allocate(self%jsten  (grid%nvertx,self%njsmx,grid%ngrids))
+allocate(self%hsten  (grid%nedgex,self%nhsmx,grid%ngrids))
+allocate(self%rsten  (grid%nfacex,self%nrsmx,grid%ngrids))
+allocate(self%rxsten (grid%nvertx,self%nrxsmx,grid%ngrids))
+allocate(self%wsten  (grid%nedgex,self%nwsmx,grid%ngrids))
+allocate(self%tsten  (grid%nfacex,self%ntsmx,grid%ngrids))
+!self%xminvsten deferred until buildxminv
 
 allocate(self%jlump(grid%nvertx,grid%ngrids))
 allocate(self%mlump(grid%nedgex,grid%ngrids))
 allocate(self%hlump(grid%nedgex,grid%ngrids))
+
+allocate(self%lmass  (grid%nfacex,self%nlsmx,grid%ngrids))
+allocate(self%mmass  (grid%nedgex,self%nmsmx,grid%ngrids))
+allocate(self%jstar  (grid%nvertx,self%njsmx,grid%ngrids))
+allocate(self%hstar  (grid%nedgex,self%nhsmx,grid%ngrids))
+allocate(self%rcoeff (grid%nfacex,self%nrsmx,grid%ngrids))
+allocate(self%rxcoeff(grid%nvertx,self%nrxsmx,grid%ngrids))
+allocate(self%wcoeff (grid%nedgex,self%nwsmx,grid%ngrids))
+!self%xminv deferred until buildxminv
+allocate(self%tcoeff (grid%nfacex,self%ntsmx,self%ntsmx,grid%ngrids))
+
+allocate(self%elong(grid%nedgex,grid%ngrids))
+allocate(self%elat (grid%nedgex,grid%ngrids))
+
+allocate(self%ninj(grid%nfacex,grid%ngrids-1))
+!self%injsten deferred until buildinj
+!self%injwgt deferred until buildinj
+
+allocate(self%lapdiag(grid%nfacex,grid%ngrids))
+allocate(self%underrel(grid%ngrids))
+
+! Information defining compound elements
+! --------------------------------------
 
 self%ncvpmx = 2*grid%nefmx
 self%ncspmx = 2 + 4*grid%nefmx
 self%ncepmx = 2*grid%nefmx
 self%ncvdmx = 2*grid%nefmx
 self%ncsdmx = 2 + 4*grid%nevmx
+
 allocate(self%ncvp(grid%nfacex))
 allocate(self%ncsp(grid%nedgex))
 allocate(self%ncep(grid%nvertx))
@@ -159,83 +215,42 @@ allocate(self%cep (grid%nvertx,self%ncepmx))
 allocate(self%cvd (grid%nvertx,self%ncvdmx))
 allocate(self%csd (grid%nedgex,self%ncsdmx))
 
-self%nlsmx = 1
-self%nmsmx = 2*grid%nefmx - 1
-self%njsmx = grid%nevmx*(grid%nefmx - 2) + 1
-self%nhsmx = 2*(grid%nevmx - 1)*(grid%nefmx - 1) - 1
-self%nrsmx = grid%nefmx
-self%nrxsmx = grid%nevmx
-self%nwsmx = 2*(grid%nefmx - 1)
-self%ntsmx = grid%nefmx
-allocate(self%nlsten (grid%nfacex,grid%ngrids))
-allocate(self%lsten  (grid%nfacex,self%nlsmx,grid%ngrids))
-allocate(self%lmass  (grid%nfacex,self%nlsmx,grid%ngrids))
-allocate(self%nmsten (grid%nedgex,grid%ngrids))
-allocate(self%msten  (grid%nedgex,self%nmsmx,grid%ngrids))
-allocate(self%mmass  (grid%nedgex,self%nmsmx,grid%ngrids))
-allocate(self%njsten (grid%nvertx,grid%ngrids))
-allocate(self%jsten  (grid%nvertx,self%njsmx,grid%ngrids))
-allocate(self%jstar  (grid%nvertx,self%njsmx,grid%ngrids))
-allocate(self%nhsten (grid%nedgex,grid%ngrids))
-allocate(self%hsten  (grid%nedgex,self%nhsmx,grid%ngrids))
-allocate(self%hstar  (grid%nedgex,self%nhsmx,grid%ngrids))
-allocate(self%nrsten (grid%nfacex,grid%ngrids))
-allocate(self%rsten  (grid%nfacex,self%nrsmx,grid%ngrids))
-allocate(self%rcoeff (grid%nfacex,self%nrsmx,grid%ngrids))
-allocate(self%nrxsten(grid%nvertx,grid%ngrids))
-allocate(self%rxsten (grid%nvertx,self%nrxsmx,grid%ngrids))
-allocate(self%rxcoeff(grid%nvertx,self%nrxsmx,grid%ngrids))
-allocate(self%nwsten (grid%nedgex,grid%ngrids))
-allocate(self%wsten  (grid%nedgex,self%nwsmx,grid%ngrids))
-allocate(self%wcoeff (grid%nedgex,self%nwsmx,grid%ngrids))
-allocate(self%ntsten (grid%nfacex,grid%ngrids))
-allocate(self%tsten  (grid%nfacex,self%ntsmx,grid%ngrids))
-allocate(self%tcoeff (grid%nfacex,self%ntsmx,self%ntsmx,grid%ngrids))
-
-self%lapdiag = 0.0_kind_real
-self%underrel = 0.0_kind_real
-self%elong = 0.0_kind_real
-self%elat = 0.0_kind_real
-self%varea = 0.0_kind_real
-self%jlump = 0.0_kind_real
-self%mlump = 0.0_kind_real
-self%hlump = 0.0_kind_real
-self%ncvp = 0
-self%ncsp = 0
-self%ncep = 0
-self%ncvd = 0
-self%ncsd = 0
-self%cvp = 0.0_kind_real
-self%csp = 0.0_kind_real
-self%cep = 0.0_kind_real
-self%cvd = 0.0_kind_real
-self%csd = 0.0_kind_real
-self%nlsten = 0
-self%lsten = 0
-self%lmass = 0.0_kind_real
-self%nmsten = 0
-self%msten = 0
-self%mmass = 0.0_kind_real
-self%njsten = 0
-self%jsten = 0
-self%jstar = 0.0_kind_real
-self%nhsten = 0
-self%hsten = 0
-self%hstar = 0.0_kind_real
-self%nrsten = 0
-self%rsten = 0
-self%rcoeff = 0.0_kind_real
-self%nrxsten = 0
-self%rxsten = 0
-self%rxcoeff = 0.0_kind_real
-self%nwsten = 0
-self%wsten = 0
-self%wcoeff = 0.0_kind_real
-self%ntsten = 0
-self%tsten = 0
-self%tcoeff = 0.0_kind_real
-
 end subroutine setup
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine pdelete(self)
+
+implicit none
+class(fempsoprs), intent(inout) :: self
+
+! Partial deallocate after build has been run
+
+if(allocated(self%eofvin    )) deallocate(self%eofvin    )
+if(allocated(self%nrsten    )) deallocate(self%nrsten    )
+if(allocated(self%nrxsten   )) deallocate(self%nrxsten   )
+if(allocated(self%nwsten    )) deallocate(self%nwsten    )
+if(allocated(self%ntsten    )) deallocate(self%ntsten    )
+if(allocated(self%rsten     )) deallocate(self%rsten     )
+if(allocated(self%rxsten    )) deallocate(self%rxsten    )
+if(allocated(self%wsten     )) deallocate(self%wsten     )
+if(allocated(self%tsten     )) deallocate(self%tsten     )
+if(allocated(self%rcoeff    )) deallocate(self%rcoeff    )
+if(allocated(self%rxcoeff   )) deallocate(self%rxcoeff   )
+if(allocated(self%wcoeff    )) deallocate(self%wcoeff    )
+if(allocated(self%tcoeff    )) deallocate(self%tcoeff    )
+if(allocated(self%ncvp      )) deallocate(self%ncvp      )
+if(allocated(self%ncsp      )) deallocate(self%ncsp      )
+if(allocated(self%ncep      )) deallocate(self%ncep      )
+if(allocated(self%ncvd      )) deallocate(self%ncvd      )
+if(allocated(self%ncsd      )) deallocate(self%ncsd      )
+if(allocated(self%cvp       )) deallocate(self%cvp       )
+if(allocated(self%csp       )) deallocate(self%csp       )
+if(allocated(self%cep       )) deallocate(self%cep       )
+if(allocated(self%cvd       )) deallocate(self%cvd       )
+if(allocated(self%csd       )) deallocate(self%csd       )
+
+end subroutine pdelete
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -244,45 +259,56 @@ subroutine delete(self)
 implicit none
 class(fempsoprs), intent(inout) :: self
 
-deallocate(self%lapdiag)
-deallocate(self%underrel)
-deallocate(self%elong)
-deallocate(self%elat)
-deallocate(self%varea)
-deallocate(self%ncvp)
-deallocate(self%ncsp)
-deallocate(self%ncep)
-deallocate(self%ncvd)
-deallocate(self%ncsd)
-deallocate(self%cvp)
-deallocate(self%csp)
-deallocate(self%cep)
-deallocate(self%cvd)
-deallocate(self%csd)
-deallocate(self%nlsten)
-deallocate(self%lsten)
-deallocate(self%lmass)
-deallocate(self%nmsten)
-deallocate(self%msten)
-deallocate(self%mmass)
-deallocate(self%njsten)
-deallocate(self%jsten)
-deallocate(self%jstar)
-deallocate(self%nhsten)
-deallocate(self%hsten)
-deallocate(self%hstar)
-deallocate(self%nrsten)
-deallocate(self%rsten)
-deallocate(self%rcoeff)
-deallocate(self%nrxsten)
-deallocate(self%rxsten)
-deallocate(self%rxcoeff)
-deallocate(self%nwsten)
-deallocate(self%wsten)
-deallocate(self%wcoeff)
-deallocate(self%ntsten)
-deallocate(self%tsten)
-deallocate(self%tcoeff)
+if(allocated(self%varea     )) deallocate(self%varea     )
+if(allocated(self%eoffin    )) deallocate(self%eoffin    )
+if(allocated(self%eofvin    )) deallocate(self%eofvin    )
+if(allocated(self%nlsten    )) deallocate(self%nlsten    )
+if(allocated(self%nmsten    )) deallocate(self%nmsten    )
+if(allocated(self%njsten    )) deallocate(self%njsten    )
+if(allocated(self%nhsten    )) deallocate(self%nhsten    )
+if(allocated(self%nrsten    )) deallocate(self%nrsten    )
+if(allocated(self%nrxsten   )) deallocate(self%nrxsten   )
+if(allocated(self%nwsten    )) deallocate(self%nwsten    )
+if(allocated(self%ntsten    )) deallocate(self%ntsten    )
+if(allocated(self%nxminvsten)) deallocate(self%nxminvsten)
+if(allocated(self%lsten     )) deallocate(self%lsten     )
+if(allocated(self%msten     )) deallocate(self%msten     )
+if(allocated(self%jsten     )) deallocate(self%jsten     )
+if(allocated(self%hsten     )) deallocate(self%hsten     )
+if(allocated(self%rsten     )) deallocate(self%rsten     )
+if(allocated(self%rxsten    )) deallocate(self%rxsten    )
+if(allocated(self%wsten     )) deallocate(self%wsten     )
+if(allocated(self%tsten     )) deallocate(self%tsten     )
+if(allocated(self%xminvsten )) deallocate(self%xminvsten )
+if(allocated(self%jlump     )) deallocate(self%jlump     )
+if(allocated(self%mlump     )) deallocate(self%mlump     )
+if(allocated(self%hlump     )) deallocate(self%hlump     )
+if(allocated(self%lmass     )) deallocate(self%lmass     )
+if(allocated(self%mmass     )) deallocate(self%mmass     )
+if(allocated(self%jstar     )) deallocate(self%jstar     )
+if(allocated(self%hstar     )) deallocate(self%hstar     )
+if(allocated(self%rcoeff    )) deallocate(self%rcoeff    )
+if(allocated(self%rxcoeff   )) deallocate(self%rxcoeff   )
+if(allocated(self%wcoeff    )) deallocate(self%wcoeff    )
+if(allocated(self%xminv     )) deallocate(self%xminv     )
+if(allocated(self%tcoeff    )) deallocate(self%tcoeff    )
+if(allocated(self%elong     )) deallocate(self%elong     )
+if(allocated(self%elat      )) deallocate(self%elat      )
+if(allocated(self%ninj      )) deallocate(self%ninj      )
+if(allocated(self%injsten   )) deallocate(self%injsten   )
+if(allocated(self%injwgt    )) deallocate(self%injwgt    )
+if(allocated(self%lapdiag   )) deallocate(self%lapdiag   )
+if(allocated(self%underrel  )) deallocate(self%underrel  )
+if(allocated(self%ncvp      )) deallocate(self%ncvp      )
+if(allocated(self%ncsp      )) deallocate(self%ncsp      )
+if(allocated(self%ncep      )) deallocate(self%ncep      )
+if(allocated(self%ncvd      )) deallocate(self%ncvd      )
+if(allocated(self%ncsd      )) deallocate(self%ncsd      )
+if(allocated(self%cvp       )) deallocate(self%cvp       )
+if(allocated(self%csp       )) deallocate(self%csp       )
+if(allocated(self%cep       )) deallocate(self%cep       )
+if(allocated(self%cvd       )) deallocate(self%cvd       )
+if(allocated(self%csd       )) deallocate(self%csd       )
 
 end subroutine delete
 
@@ -349,7 +375,15 @@ real(kind=kind_real) :: pi, long, lat, x0(3), x1(3), d1x, d1y, d1z, thetamin, &
                         x2(3), d2x, d2y, d2z, cs, sn, theta
 logical :: lfound
 
-pi = 4.0d0*atan(1.0d0)
+! Note: this method updates:
+! grid%fnxtf
+! grid%eoff
+! grid%voff
+! grid%eofv
+! grid%fofv
+! grid%vofe
+
+pi = 4.0_kind_real*atan(1.0_kind_real)
 
 ! Loop over all grids in the hierarchy
 do igrid = 1, grid%ngrids
@@ -397,7 +431,7 @@ do igrid = 1, grid%ngrids
            + x0(2)*(d1z*d2x - d1x*d2z) &
            + x0(3)*(d1x*d2y - d1y*d2x)
         theta = ATAN2(sn,cs)
-        if ((theta < thetamin) .and. (theta > 0.0d0)) then
+        if ((theta < thetamin) .and. (theta > 0.0_kind_real)) then
           ixmin = ix2
           ifmin = if2
           thetamin = theta
@@ -499,7 +533,7 @@ do igrid = 1, grid%ngrids
            + x0(2)*(d1z*d2x - d1x*d2z) &
            + x0(3)*(d1x*d2y - d1y*d2x)
         theta = ATAN2(sn,cs)
-        if ((theta < thetamin) .AND. (theta > 0.0d0)) THEN
+        if ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
           ixmin = ix2
           iemin = ie2
           thetamin = theta
@@ -569,7 +603,7 @@ do igrid = 1, grid%ngrids
     sn = x0(1)*(d1y*d2z - d1z*d2y) &
        + x0(2)*(d1z*d2x - d1x*d2z) &
        + x0(3)*(d1x*d2y - d1y*d2x)
-    if (sn < 0.0d0) THEN
+    if (sn < 0.0_kind_real) THEN
       ! Swap the two vertices
       grid%vofe(ie0,1,igrid) = iv2
       grid%vofe(ie0,2,igrid) = iv1
@@ -598,6 +632,11 @@ integer :: igrid, ie0, if1, if2, iv1, iv2, if0, ie1, ix
 real(kind=kind_real) :: long, lat, x1(3), x2(3), y1(3), y2(3), &
                         n1(3), n2(3), r1(3), mag, l1sq, l2sq, l3sq, &
                         area, a
+
+! Note: this method updates:
+! grid%ddist
+! grid%ldist
+! grid%farea
 
 ! Loop over grids
 do igrid = 1, grid%ngrids
@@ -659,12 +698,12 @@ do igrid = 1, grid%ngrids
 
   ! Intialize dual cell areas to zero and
   ! accumulate as we touch each vertex
-  self%varea(:,igrid) = 0.0d0
+  self%varea(:,igrid) = 0.0_kind_real
   ! Loop over primal cells
   do if0 = 1, grid%nface(igrid)
 
     ! Initialize area to zero and locate call centre
-    area = 0.0d0
+    area = 0.0_kind_real
     long = grid%flong(if0,igrid)
     lat = grid%flat(if0,igrid)
     call ll2xyz(long,lat,r1)
@@ -701,8 +740,6 @@ do igrid = 1, grid%ngrids
 enddo
 
 ! Construct the tables eoffin and eofvin
-allocate(self%eoffin(grid%nfacex,grid%nefmx,grid%ngrids))
-allocate(self%eofvin(grid%nvertx,grid%nevmx,grid%ngrids))
 do igrid = 1, grid%ngrids
 
   do if1 = 1, grid%nface(igrid)
@@ -711,10 +748,10 @@ do igrid = 1, grid%ngrids
       if2 = grid%fnxte(ie1,1,igrid)
       if (if1 == if2) THEN
         ! This edge points out of face if1
-        self%eoffin(if1,ix,igrid) = -1.0d0
+        self%eoffin(if1,ix,igrid) = -1.0_kind_real
       else
         ! This edge points into face if1
-        self%eoffin(if1,ix,igrid) = 1.0d0
+        self%eoffin(if1,ix,igrid) = 1.0_kind_real
       endif
     enddo
   enddo
@@ -725,10 +762,10 @@ do igrid = 1, grid%ngrids
       iv2 = grid%vofe(ie1,1,igrid)
       if (iv1 == iv2) THEN
         ! This edge points away from vertex iv1
-        self%eofvin(iv1,ix,igrid) = -1.0d0
+        self%eofvin(iv1,ix,igrid) = -1.0_kind_real
       else
         ! This edge points towards vertex iv1
-        self%eofvin(iv1,ix,igrid) = 1.0d0
+        self%eofvin(iv1,ix,igrid) = 1.0_kind_real
       endif
     enddo
   enddo
@@ -968,9 +1005,9 @@ do ie0 = 1, ne
 
     ! Is edge flux in or out of cell if1 ?
     if (ixf == 1) THEN
-      sgnflx =  1.0d0 ! outward
+      sgnflx =  1.0_kind_real ! outward
     else
-      sgnflx = -1.0d0 ! inward
+      sgnflx = -1.0_kind_real ! inward
     endif
 
     ! Area of cell if1
@@ -994,7 +1031,7 @@ do ie0 = 1, ne
     ! First guess to get the divergence right
     ! First two internal fluxes
     ixc = ixc + 1
-    self%csp(ie0,ixc) = 0.0d0
+    self%csp(ie0,ixc) = 0.0_kind_real
     ixv = 3 - ixf
     iv1 = grid%vofe(ie0,ixv,igrid)
     long = grid%vlong(iv1,igrid)
@@ -1033,17 +1070,17 @@ do ie0 = 1, ne
 
     ! Now correct to make vorticity vanish
     ! Accumulate integrals over micro elements
-    sum1 = 0.0d0
-    sum2 = 0.0d0
+    sum1 = 0.0_kind_real
+    sum2 = 0.0_kind_real
     ! First the contributions from the flux across edge ie0
-    sg = 1.0d0
+    sg = 1.0_kind_real
     do ixv = 1, 2
       iv1 = grid%vofe(ie0,ixv,igrid)
       long = grid%vlong(iv1,igrid)
       lat = grid%vlat(iv1,igrid)
       call ll2xyz(long,lat,x2)
       call triangle(x1,x0,x2,l1sq,l2sq,l3sq,a)
-      sum2 = sum2 + sg*self%csp(ie0,ixv)*(l2sq - l3sq)/(12.0d0*a)
+      sum2 = sum2 + sg*self%csp(ie0,ixv)*(l2sq - l3sq)/(12.0_kind_real*a)
       sg = -sg
     enddo
     ! Now the contributions from all the internal fluxes
@@ -1066,10 +1103,10 @@ do ie0 = 1, ne
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
       ixc = ixc + 1
       ixcp = ixc + 1
-      sum1 = sum1 + l1sq/(4.0d0*a)
-      contrib = ( self%csp(ie0,ixc )*(3.0d0*l1sq + l3sq - l2sq)   &
-                + self%csp(ie0,ixcp)*(3.0d0*l1sq + l2sq - l3sq) ) &
-                                               /(24.0d0*a)
+      sum1 = sum1 + l1sq/(4.0_kind_real*a)
+      contrib = ( self%csp(ie0,ixc )*(3.0_kind_real*l1sq + l3sq - l2sq)   &
+                + self%csp(ie0,ixcp)*(3.0_kind_real*l1sq + l2sq - l3sq) ) &
+                                               /(24.0_kind_real*a)
       sum2 = sum2 + contrib
       ! Find the following edge
       ixe1 = ixe1 + 1
@@ -1082,10 +1119,10 @@ do ie0 = 1, ne
       ixc = ixc + 1
       ixcp = ixc + 1
       if (ix == nef1) ixcp = offset(ixf) + 1
-      sum1 = sum1 + l1sq/(4.0d0*a)
-      contrib = ( self%csp(ie0,ixcp)*(3.0d0*l1sq + l3sq - l2sq)   &
-                + self%csp(ie0,ixc )*(3.0d0*l1sq + l2sq - l3sq) ) &
-                                               /(24.0d0*a)
+      sum1 = sum1 + l1sq/(4.0_kind_real*a)
+      contrib = ( self%csp(ie0,ixcp)*(3.0_kind_real*l1sq + l3sq - l2sq)   &
+                + self%csp(ie0,ixc )*(3.0_kind_real*l1sq + l2sq - l3sq) ) &
+                                               /(24.0_kind_real*a)
       sum2 = sum2 + contrib
 
       ixv1 = ixv1 + 1
@@ -1166,7 +1203,7 @@ do iv0 = 1, nv
     ! calculate distance of supermesh vertex from central vertex
     ! and hence the coefficient
     l1 = SQRT((x1(1) - x0(1))**2 + (x1(2) - x0(2))**2 + (x1(3) - x0(3))**2)
-    self%cep(iv0,ix) = 1.0d0 - l1/grid%ldist(ie1,igrid)
+    self%cep(iv0,ix) = 1.0_kind_real - l1/grid%ldist(ie1,igrid)
 
   enddo
 
@@ -1193,10 +1230,10 @@ do iv0 = 1, nv
     lat = grid%vlat(iv2,igrid)
     call ll2xyz(long,lat,x3)
     call triangle(x2,x3,x1,l1sq,l2sq,l3sq,a)
-    sum2 = self%cep(iv0,ix)*(l1sq - l2sq + l3sq)/(8.0d0*a)
+    sum2 = self%cep(iv0,ix)*(l1sq - l2sq + l3sq)/(8.0_kind_real*a)
     call triangle(x0,x2,x1,l1sq,l2sq,l3sq,a)
-    sum2 = sum2 + (l1sq - l2sq + l3sq)/(8.0d0*a) &
-                + self%cep(iv0,ix)*(-l1sq + l2sq + l3sq)/(8.0d0*a)
+    sum2 = sum2 + (l1sq - l2sq + l3sq)/(8.0_kind_real*a) &
+                + self%cep(iv0,ix)*(-l1sq + l2sq + l3sq)/(8.0_kind_real*a)
     ! Second edge
     ixp = ix + 1
     if (ixp > nev0) ixp = 1
@@ -1210,13 +1247,13 @@ do iv0 = 1, nv
     lat = grid%vlat(iv2,igrid)
     call ll2xyz(long,lat,x3)
     call triangle(x3,x2,x1,l1sq,l2sq,l3sq,a)
-    sum2 = sum2 + self%cep(iv0,ixp)*(-l1sq + l2sq + l3sq)/(8.0d0*a)
+    sum2 = sum2 + self%cep(iv0,ixp)*(-l1sq + l2sq + l3sq)/(8.0_kind_real*a)
     call triangle(x2,x0,x1,l1sq,l2sq,l3sq,a)
-    sum2 = sum2 + (-l1sq + l2sq + l3sq)/(8.0d0*a) &
-                + self%cep(iv0,ixp)*(l1sq - l2sq + l3sq)/(8.0d0*a)
+    sum2 = sum2 + (-l1sq + l2sq + l3sq)/(8.0_kind_real*a) &
+                + self%cep(iv0,ixp)*(l1sq - l2sq + l3sq)/(8.0_kind_real*a)
 
     ! Now construct a second integral summing over all microelements
-    sum1 = 0.0d0
+    sum1 = 0.0_kind_real
     nef1 = grid%neoff(if1,igrid)
     do ixv = 1, nef1
 
@@ -1231,7 +1268,7 @@ do iv0 = 1, nv
       lat = self%elat(ie1,igrid)
       call ll2xyz(long,lat,x3)
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
-      sum1 = sum1 + l1sq/(4.0d0*a)
+      sum1 = sum1 + l1sq/(4.0_kind_real*a)
       ! Find the following edge
       ixvp = ixv + 1
       if (ixvp > nef1) ixvp = 1
@@ -1240,7 +1277,7 @@ do iv0 = 1, nv
       lat = self%elat(ie1,igrid)
       call ll2xyz(long,lat,x3)
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
-      sum1 = sum1 + l1sq/(4.0d0*a)
+      sum1 = sum1 + l1sq/(4.0_kind_real*a)
 
     enddo
 
@@ -1409,9 +1446,9 @@ do ie0 = 1, ne
 
     ! Is circulation positive or negative for dual cell iv1 ?
     if (ixv == 1) THEN
-      sgncrc = -1.0d0
+      sgncrc = -1.0_kind_real
     else
-      sgncrc = 1.0d0
+      sgncrc = 1.0_kind_real
     endif
 
     ! Area of dual cell iv1
@@ -1435,7 +1472,7 @@ do ie0 = 1, ne
     ! First guess to get the vorticity right
     ! First two internal circulations
     ixc = ixc + 1
-    self%csd(ie0,ixc) = 0.0d0
+    self%csd(ie0,ixc) = 0.0_kind_real
     ixf = ixv
     if1 = grid%fnxte(ie0,ixf,igrid)
     long = grid%flong(if1,igrid)
@@ -1474,10 +1511,10 @@ do ie0 = 1, ne
 
     ! Now correct to make vorticity vanish
     ! Accumulate integrals over micro elements
-    sum1 = 0.0d0
-    sum2 = 0.0d0
+    sum1 = 0.0_kind_real
+    sum2 = 0.0_kind_real
     ! First the contributions from the circulations at edge ie0
-    sg = -1.0d0
+    sg = -1.0_kind_real
     do ixf = 1, 2
       if1 = grid%fnxte(ie0,ixf,igrid)
       long = grid%flong(if1,igrid)
@@ -1485,9 +1522,9 @@ do ie0 = 1, ne
       call ll2xyz(long,lat,x2)
       call triangle(x1,x0,x2,l1sq,l2sq,l3sq,a)
 !      Restore this erroneous line for backward compatibility
-!      sum2 = sum2 + sg*self%csd(ie0,ixf)*(l2sq - l3sq)/(12.0d0*a)
+!      sum2 = sum2 + sg*self%csd(ie0,ixf)*(l2sq - l3sq)/(12.0_kind_real*a)
 !     This is the correct calculation
-      sum2 = sum2 + sg*self%csd(ie0,ixf)*(l3sq - l2sq)/(12.0d0*a)
+      sum2 = sum2 + sg*self%csd(ie0,ixf)*(l3sq - l2sq)/(12.0_kind_real*a)
       sg = -sg
     enddo
 
@@ -1511,10 +1548,10 @@ do ie0 = 1, ne
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
       ixc = ixc + 1
       ixcp = ixc + 1
-      sum1 = sum1 + l1sq/(4.0d0*a)
-      contrib = ( self%csd(ie0,ixc )*(3.0d0*l1sq + l3sq - l2sq)   &
-                + self%csd(ie0,ixcp)*(3.0d0*l1sq + l2sq - l3sq) ) &
-                                               /(24.0d0*a)
+      sum1 = sum1 + l1sq/(4.0_kind_real*a)
+      contrib = ( self%csd(ie0,ixc )*(3.0_kind_real*l1sq + l3sq - l2sq)   &
+                + self%csd(ie0,ixcp)*(3.0_kind_real*l1sq + l2sq - l3sq) ) &
+                                               /(24.0_kind_real*a)
       sum2 = sum2 + contrib
       ! Find the following edge
       ixe1 = ixe1 + 1
@@ -1527,10 +1564,10 @@ do ie0 = 1, ne
       ixc = ixc + 1
       ixcp = ixc + 1
       if (ix == nev1) ixcp = offset(ixv) + 1
-      sum1 = sum1 + l1sq/(4.0d0*a)
-      contrib = ( self%csd(ie0,ixcp)*(3.0d0*l1sq + l3sq - l2sq)   &
-                + self%csd(ie0,ixc )*(3.0d0*l1sq + l2sq - l3sq) ) &
-                                               /(24.0d0*a)
+      sum1 = sum1 + l1sq/(4.0_kind_real*a)
+      contrib = ( self%csd(ie0,ixcp)*(3.0_kind_real*l1sq + l3sq - l2sq)   &
+                + self%csd(ie0,ixc )*(3.0_kind_real*l1sq + l2sq - l3sq) ) &
+                                               /(24.0_kind_real*a)
       sum2 = sum2 + contrib
 
       ixf1 = ixf1 + 1
@@ -1577,7 +1614,7 @@ do if0 = 1, nf
   self%nlsten(if0,igrid) = 1
   self%lsten(if0,1,igrid) = if0
 
-  sum1 = 0.0d0
+  sum1 = 0.0_kind_real
 
   ! Cell centre
   long = grid%flong(if0,igrid)
@@ -1661,7 +1698,7 @@ do ie0 = 1, ne
 
   ! Make sure first stencil edge is ie0 itself
   self%msten(ie0,1,igrid) = ie0
-  self%mmass(ie0,1,igrid) = 0.0d0
+  self%mmass(ie0,1,igrid) = 0.0_kind_real
 
   ! Loop over the two primal cells either side
   do ixf = 1, 2
@@ -1724,7 +1761,7 @@ do ie0 = 1, ne
 
       if (disp > 0) THEN
         ! Initialize sum to zero
-        sum1 = 0.0d0
+        sum1 = 0.0_kind_real
       else
         ! We need the product of the exterior flux contributions
         ixv = ix0 - 1
@@ -1734,14 +1771,14 @@ do ie0 = 1, ne
         lat = grid%vlat(iv2,igrid)
         call ll2xyz(long,lat,x2)
         call triangle(x1,x2,x0,l1sq,l2sq,l3sq,a)
-        sum1 = a1(1)*a2(1)*(3.0d0*(l2sq + l3sq) - l1sq)/(48.0d0*a)
+        sum1 = a1(1)*a2(1)*(3.0_kind_real*(l2sq + l3sq) - l1sq)/(48.0_kind_real*a)
         ixv = ix0
         iv2 = grid%voff(if1,ixv,igrid)
         long = grid%vlong(iv2,igrid)
         lat = grid%vlat(iv2,igrid)
         call ll2xyz(long,lat,x2)
         call triangle(x1,x0,x2,l1sq,l2sq,l3sq,a)
-        sum1 = sum1 + a1(2)*a2(2)*(3.0d0*(l2sq + l3sq) - l1sq)/(48.0d0*a)
+        sum1 = sum1 + a1(2)*a2(2)*(3.0_kind_real*(l2sq + l3sq) - l1sq)/(48.0_kind_real*a)
       endif
 
       ! Now cross products of exterior and interior fluxes
@@ -1757,18 +1794,18 @@ do ie0 = 1, ne
       lat = grid%vlat(iv2,igrid)
       call ll2xyz(long,lat,x2)
       call triangle(x1,x2,x0,l1sq,l2sq,l3sq,a)
-      sum1 = sum1 + a1(1)*( - b2(ixc)*(l1sq + l2sq - 3.0d0*l3sq)    &
-                            + b2(ixm)*(l1sq + l3sq - 3.0d0*l2sq) )  &
-                                                     /(48.0d0*a)
+      sum1 = sum1 + a1(1)*( - b2(ixc)*(l1sq + l2sq - 3.0_kind_real*l3sq)    &
+                            + b2(ixm)*(l1sq + l3sq - 3.0_kind_real*l2sq) )  &
+                                                     /(48.0_kind_real*a)
       ixv = ix0
       iv2 = grid%voff(if1,ixv,igrid)
       long = grid%vlong(iv2,igrid)
       lat = grid%vlat(iv2,igrid)
       call ll2xyz(long,lat,x2)
       call triangle(x1,x0,x2,l1sq,l2sq,l3sq,a)
-      sum1 = sum1 + a1(2)*( - b2(ixp)*(l1sq + l2sq - 3.0d0*l3sq)    &
-                            + b2(ixc)*(l1sq + l3sq - 3.0d0*l2sq) )  &
-                                                     /(48.0d0*a)
+      sum1 = sum1 + a1(2)*( - b2(ixp)*(l1sq + l2sq - 3.0_kind_real*l3sq)    &
+                            + b2(ixc)*(l1sq + l3sq - 3.0_kind_real*l2sq) )  &
+                                                     /(48.0_kind_real*a)
       ! Indices of edges of micro elements on ie2 relative to ie0
       ixm = 2*disp
       ixc = ixm + 1
@@ -1781,18 +1818,18 @@ do ie0 = 1, ne
       lat = grid%vlat(iv2,igrid)
       call ll2xyz(long,lat,x2)
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
-      sum1 = sum1 + a2(1)*( - b1(ixc)*(l1sq + l2sq - 3.0d0*l3sq)    &
-                            + b1(ixm)*(l1sq + l3sq - 3.0d0*l2sq) )  &
-                                                     /(48.0d0*a)
+      sum1 = sum1 + a2(1)*( - b1(ixc)*(l1sq + l2sq - 3.0_kind_real*l3sq)    &
+                            + b1(ixm)*(l1sq + l3sq - 3.0_kind_real*l2sq) )  &
+                                                     /(48.0_kind_real*a)
       ixv = ixe
       iv2 = grid%voff(if1,ixv,igrid)
       long = grid%vlong(iv2,igrid)
       lat = grid%vlat(iv2,igrid)
       call ll2xyz(long,lat,x2)
       call triangle(x1,x3,x2,l1sq,l2sq,l3sq,a)
-      sum1 = sum1 + a2(2)*( - b1(ixp)*(l1sq + l2sq - 3.0d0*l3sq)    &
-                            + b1(ixc)*(l1sq + l3sq - 3.0d0*l2sq) )  &
-                                                     /(48.0d0*a)
+      sum1 = sum1 + a2(2)*( - b1(ixp)*(l1sq + l2sq - 3.0_kind_real*l3sq)    &
+                            + b1(ixc)*(l1sq + l3sq - 3.0_kind_real*l2sq) )  &
+                                                     /(48.0_kind_real*a)
 
       ! And finally products of interior flux contributions
       ! Loop over edges of if1
@@ -1827,22 +1864,22 @@ do ie0 = 1, ne
         lat = grid%vlat(iv2,igrid)
         call ll2xyz(long,lat,x2)
         call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
-        sum1 = sum1 + ( b1(ixm)*b2(ixm2)*(3.0d0*(l1sq + l2sq) - l3sq)        &
-                      + b1(ixc)*b2(ixc2)*(3.0d0*(l1sq + l3sq) - l2sq)        &
+        sum1 = sum1 + ( b1(ixm)*b2(ixm2)*(3.0_kind_real*(l1sq + l2sq) - l3sq)        &
+                      + b1(ixc)*b2(ixc2)*(3.0_kind_real*(l1sq + l3sq) - l2sq)        &
                      - (b1(ixm)*b2(ixc2) + b1(ixc)*b2(ixm2))                 &
-                                        *(l2sq + l3sq - 3.0d0*l1sq)    )     &
-                                                       /(48.0d0*a)
+                                        *(l2sq + l3sq - 3.0_kind_real*l1sq)    )     &
+                                                       /(48.0_kind_real*a)
         ixv = ix3
         iv2 = grid%voff(if1,ixv,igrid)
         long = grid%vlong(iv2,igrid)
         lat = grid%vlat(iv2,igrid)
         call ll2xyz(long,lat,x2)
         call triangle(x1,x3,x2,l1sq,l2sq,l3sq,a)
-        sum1 = sum1 + ( b1(ixc)*b2(ixc2)*(3.0d0*(l1sq + l2sq) - l3sq)        &
-                      + b1(ixp)*b2(ixp2)*(3.0d0*(l1sq + l3sq) - l2sq)        &
+        sum1 = sum1 + ( b1(ixc)*b2(ixc2)*(3.0_kind_real*(l1sq + l2sq) - l3sq)        &
+                      + b1(ixp)*b2(ixp2)*(3.0_kind_real*(l1sq + l3sq) - l2sq)        &
                      - (b1(ixc)*b2(ixp2) + b1(ixp)*b2(ixc2))                 &
-                                        *(l2sq + l3sq - 3.0d0*l1sq)    )     &
-                                                       /(48.0d0*a)
+                                        *(l2sq + l3sq - 3.0_kind_real*l1sq)    )     &
+                                                       /(48.0_kind_real*a)
 
       enddo
 
@@ -1922,7 +1959,7 @@ do iv0 = 1, nv
     ! Now loop over the micro elements in if1, integrating
     ! the product of the basis functions
     nef1 = grid%neoff(if1,igrid)
-    sum1 = 0.0d0
+    sum1 = 0.0_kind_real
     do ixe = 1, nef1
       ie1 = grid%eoff(if1,ixe,igrid)
       ! Locate edge crossing point
@@ -1939,19 +1976,19 @@ do iv0 = 1, nv
       lat = grid%vlat(iv1,igrid)
       call ll2xyz(long,lat,x3)
       call triangle(x1,x3,x2,l1sq,l2sq,l3sq,a)
-      aby3 = a/3.0d0
+      aby3 = a/3.0_kind_real
       sum1 = sum1 + vc*aby3
       if (ixv  == ixv0) sum1 = sum1 + v1*aby3
-      if (ixvm == ixv0) sum1 = sum1 + (1.0d0 + v2)*aby3
+      if (ixvm == ixv0) sum1 = sum1 + (1.0_kind_real + v2)*aby3
       ! Second one
       iv1 = grid%voff(if1,ixv,igrid)
       long = grid%vlong(iv1,igrid)
       lat = grid%vlat(iv1,igrid)
       call ll2xyz(long,lat,x3)
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
-      aby3 = a/3.0d0
+      aby3 = a/3.0_kind_real
       sum1 = sum1 + vc*aby3
-      if (ixv  == ixv0) sum1 = sum1 + (1.0d0 + v1)*aby3
+      if (ixv  == ixv0) sum1 = sum1 + (1.0_kind_real + v1)*aby3
       if (ixvm == ixv0) sum1 = sum1 + v2*aby3
     enddo
     self%rsten(if1,ixv0,igrid) = iv0
@@ -2023,7 +2060,7 @@ do ie0 = 1, ne
   do ixf = 1, 2
     if1 = grid%fnxte(ie0,ixf,igrid)
     ne1 = grid%neoff(if1,igrid)
-    ss = -0.5d0
+    ss = -0.5_kind_real
 
     ! Which edge of face if1 is edge ie0?
     ix1 = 1
@@ -2077,7 +2114,7 @@ do iv0 = 1, nv
   self%jsten(iv0,:,igrid) = 0
   self%jsten(iv0,1,igrid) = iv0
   ns = 1
-  self%jstar(iv0,:,igrid) = 0.0d0
+  self%jstar(iv0,:,igrid) = 0.0_kind_real
 
   ! Loop over the faces comprising the element in Ep
   do ixf = 1, nev1
@@ -2125,9 +2162,9 @@ do iv0 = 1, nv
       lat = self%elat(ie1,igrid)
       call ll2xyz(long,lat,x3)
       call triangle(x1,x3,x2,l1sq,l2sq,l3sq,a)
-      aby3 = a/3.0d0
+      aby3 = a/3.0_kind_real
       sum1 = vc*aby3
-      if (ixv == ixv0) sum1 = sum1 + (1.0d0 + v1)*aby3
+      if (ixv == ixv0) sum1 = sum1 + (1.0_kind_real + v1)*aby3
       if (ixv == ixvp) sum1 = sum1 + v2*aby3
       ! Second one
       ie1 = grid%eoff(if1,ixep,igrid)
@@ -2135,10 +2172,10 @@ do iv0 = 1, nv
       lat = self%elat(ie1,igrid)
       call ll2xyz(long,lat,x3)
       call triangle(x1,x2,x3,l1sq,l2sq,l3sq,a)
-      aby3 = a/3.0d0
+      aby3 = a/3.0_kind_real
       sum1 = sum1 + vc*aby3
       if (ixv == ixvm) sum1 = sum1 + v1*aby3
-      if (ixv == ixv0) sum1 = sum1 + (1.0d0 + v2)*aby3
+      if (ixv == ixv0) sum1 = sum1 + (1.0_kind_real + v2)*aby3
       ! Now include this contribution in the coefficient
       temp = self%jsten(iv0,:,igrid)
       call findinlist(iv1,temp,self%njsmx,ix)
@@ -2181,7 +2218,7 @@ do ie0 = 1, ne
   self%hsten(ie0,:,igrid) = 0
   self%hsten(ie0,1,igrid) = ie0
   ns = 1
-  self%hstar(ie0,:,igrid) = 0.0d0
+  self%hstar(ie0,:,igrid) = 0.0_kind_real
 
   ! Two faces either side of edge ie0
   do ixf = 1, 2
@@ -2219,12 +2256,12 @@ do ie0 = 1, ne
       if (d == 0) THEN
         flx1 = extf2
       else
-        flx1 = 0.0d0
+        flx1 = 0.0_kind_real
       endif
       if (d == nef1 - 1) THEN
         flx2 = extf1
       else
-        flx2 = 0.0d0
+        flx2 = 0.0_kind_real
       endif
       ip3 = 2*d + 1
       flx3 = self%csp(ie0,offset + ip3)
@@ -2266,12 +2303,12 @@ do ie0 = 1, ne
         if (d == 0) THEN
           crc2 = -extc1
         else
-          crc2 = 0.0d0
+          crc2 = 0.0_kind_real
         endif
         if (d == nev1 - 1) THEN
           crc1 = -extc2
         else
-          crc1 = 0.0d0
+          crc1 = 0.0_kind_real
         endif
         iq3 = 2*d + 1
         crc3 = self%csd(ie2,offset2 + iq3)
@@ -2285,13 +2322,13 @@ do ie0 = 1, ne
         sum1 = (-flx1*crc4 + flx1*crc1 + flx4*crc5 + flx4*crc1   &
                + flx3*crc5 + flx3*crc4 - flx2*crc2 - flx2*crc4   &
                - flx5*crc3 - flx5*crc4 - flx4*crc3 + flx4*crc2)  &
-                                             / 6.0d0
+                                             / 6.0_kind_real
 
         ! Update stencil and coefficients
         temp = self%hsten(ie0,:,igrid)
         call findinlist(ie2,temp,self%nhsmx,ix)
         self%hsten(ie0,:,igrid) = temp
-        
+
         ns = MAX(ns,ix)
         self%hstar(ie0,ix,igrid) = self%hstar(ie0,ix,igrid) + sum1
 
@@ -2322,9 +2359,6 @@ integer :: if0, if1, igrid, igridp, nf, ix, ixp, iv1, iv2, &
            n2, n, n2p, np, i, j, &
            t1, s1, s2, s3, s4, p
 
-! Allocate array for size of operator stencil
-allocate(self%ninj(grid%nfacex,grid%ngrids-1))
-
 ! if ((grid%nedgex == 3*(grid%nfacex - 2)) .AND. (grid%nefmx == 6) .AND. (grid%nevmx == 3)) THEN
 if (grid%gtype == 'ih') THEN
 
@@ -2340,7 +2374,7 @@ if (grid%gtype == 'ih') THEN
 
   ! Initialize to zero
   self%injsten = 0
-  self%injwgt = 0.0d0
+  self%injwgt = 0.0_kind_real
 
   ! And define stencil and coefficients
   do igrid = 1, grid%ngrids-1
@@ -2349,7 +2383,7 @@ if (grid%gtype == 'ih') THEN
       ! Face if0 exists on grid igrid and grid igrid+1 and is
       ! the centre of the stencil
       self%injsten(if0,1,igrid) = if0
-      self%injwgt(if0,1,igrid) = 1.0d0
+      self%injwgt(if0,1,igrid) = 1.0_kind_real
       ! The neighbours of if0 on grid igrid+1 are the other members
       ! of the stencil
       nf = grid%neoff(if0,igridp)
@@ -2358,7 +2392,7 @@ if (grid%gtype == 'ih') THEN
         ixp = ix + 1
         if1 = grid%fnxtf(if0,ix,igridp)
         self%injsten(if0,ixp,igrid) = if1
-        self%injwgt(if0,ixp,igrid) = 0.5d0
+        self%injwgt(if0,ixp,igrid) = 0.5_kind_real
       enddo
     enddo
   enddo
@@ -2378,17 +2412,17 @@ elseif (grid%gtype == 'cs') THEN
 
   ! Initialize to zero
   self%injsten = 0
-  self%injwgt = 0.0d0
+  self%injwgt = 0.0_kind_real
 
   ! And define stencil and coefficients
   do igrid = 1, grid%ngrids-1
     igridp = igrid + 1
     ! Number of cells per face and cells per edge on grid igrid
     n2 = grid%nface(igrid)/6
-    n = NINT(SQRT(1.0d0*n2))
+    n = NINT(SQRT(1.0_kind_real*n2))
     ! And on grid igridp
     n2p = grid%nface(igridp)/6
-    np = NINT(SQRT(1.0d0*n2p))
+    np = NINT(SQRT(1.0_kind_real*n2p))
     ! Loop over cells on a panel
     do j = 1, n
       do i = 1, n
@@ -2405,7 +2439,7 @@ elseif (grid%gtype == 'cs') THEN
           self%injsten(if0,2,igrid) = s2 + (p - 1)*n2p
           self%injsten(if0,3,igrid) = s3 + (p - 1)*n2p
           self%injsten(if0,4,igrid) = s4 + (p - 1)*n2p
-          self%injwgt(if0,1:4,igrid) = 1.0d0
+          self%injwgt(if0,1:4,igrid) = 1.0_kind_real
         enddo
       enddo
     enddo
@@ -2426,13 +2460,13 @@ elseif (grid%gtype == 'di') THEN
 
   ! Initialize to zero
   self%injsten = 0
-  self%injwgt = 0.0d0
+  self%injwgt = 0.0_kind_real
 
   ! And define stencil and coefficients
   do igrid = 1, grid%ngrids-1
     igridp = igrid + 1
     ! Length (cells) of cubed sphere panel
-    n = NINT(SQRT(grid%nface(igrid)/12.0D0))
+    n = NINT(SQRT(grid%nface(igrid)/12.0_kind_real))
     ! Diamond cells on the coarse grid correspond to cubed sphere edges.
     ! Match these to fine cubed sphere vertices at the centres of the edges.
     ! These vertices are also vertices of the diamond grid and their neighboring
@@ -2448,7 +2482,7 @@ elseif (grid%gtype == 'di') THEN
           if1 = if0 + (p - 1)*2*n*n
           iv2 = iv1 + (p - 1)*4*n*n
           self%injsten(if1,:,igrid) = grid%fofv(iv2,:,igrid)
-          self%injwgt(if1,1:4,igrid) = 1.0d0
+          self%injwgt(if1,1:4,igrid) = 1.0_kind_real
         enddo
 
         ! Even cube edges / diamond faces
@@ -2458,7 +2492,7 @@ elseif (grid%gtype == 'di') THEN
           if1 = if0 + (p - 1)*2*n*n
           iv2 = iv1 + (p - 1)*4*n*n
           self%injsten(if1,:,igrid) = grid%fofv(iv2,:,igrid)
-          self%injwgt(if1,1:4,igrid) = 1.0d0
+          self%injwgt(if1,1:4,igrid) = 1.0_kind_real
         enddo
 
       enddo

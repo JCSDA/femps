@@ -32,10 +32,6 @@ integer :: igrid
 grid%farea = grid%farea*rearth*rearth
 grid%ldist = grid%ldist*rearth
 grid%ddist = grid%ddist*rearth
-! Determine smallest face area on each grid
-do igrid = 1, grid%ngrids
-  grid%fareamin(igrid) = minval(grid%farea(1:grid%nface(igrid),igrid))
-enddo
 oprs%varea = oprs%varea*rearth*rearth
 oprs%lmass = oprs%lmass/(rearth*rearth)
 
@@ -77,9 +73,9 @@ real(kind=kind_real) :: temp, cd2, cm, cd1, cl
 ! -----------------------------------------------------------------------
 do igrid = 1, grid%ngrids
   IF (grid%nefmx == 6) THEN
-    oprs%underrel(igrid) = 0.8d0
+    oprs%underrel(igrid) = 0.8_kind_real
   ELSEIF (grid%nefmx == 4) THEN
-    oprs%underrel(igrid) = 0.8d0
+    oprs%underrel(igrid) = 0.8_kind_real
   ELSE
     print *,'Choose a sensible value for underrel in buildlap'
     STOP
@@ -92,7 +88,7 @@ do igrid = 1, grid%ngrids
   ! Loop over cells
   do if1 = 1, grid%nface(igrid)
 
-    temp = 0.0d0
+    temp = 0.0_kind_real
     ! Loop over edges of if1 involved in Dprimal2 operator
     do ixd2 = 1, grid%neoff(if1,igrid)
       ie1 = grid%eoff(if1,ixd2,igrid)
@@ -102,7 +98,7 @@ do igrid = 1, grid%ngrids
         ie2 = oprs%xminvsten(ie1,ixm,igrid)
         cm = oprs%xminv(ie1,ixm,igrid)
         ! Loop over cells involved in Ddual1 operator
-        cd1 = 1.0d0
+        cd1 = 1.0_kind_real
         do ixd1 = 1, 2
           if2 = grid%fnxte(ie2,ixd1,igrid)
           cd1 = -cd1
@@ -168,7 +164,7 @@ integer :: if1, ix, ie1
 real(kind=kind_real) :: temp
 
 do if1 = 1, nf
-  temp = 0.0d0
+  temp = 0.0_kind_real
   do ix = 1, grid%neoff(if1,igrid)
     ie1 = grid%eoff(if1,ix,igrid)
     temp = temp - f(ie1)*oprs%eoffin(if1,ix,igrid)
@@ -234,7 +230,7 @@ do igrid = 1, grid%ngrids
 
     nv = grid%nvert(igrid)
     allocate(p1(nv), jp1(nv))
-    p1 = 1.0d0
+    p1 = 1.0_kind_real
     call HodgeJ(oprs,p1,jp1,igrid,nv)
     oprs%jlump(1:nv,igrid) = jp1
     deallocate(p1,jp1)
@@ -292,7 +288,7 @@ do igrid = 1, grid%ngrids
   elseif (imlump == 2) then
 
     do ie1 = 1, grid%nedge(igrid)
-      temp = 0.0d0
+      temp = 0.0_kind_real
       do ix = 1, oprs%nmsten(ie1,igrid)
         ie2 = oprs%msten(ie1,ix,igrid)
         temp = temp + abs(oprs%mmass(ie1,ix,igrid))
@@ -386,7 +382,7 @@ do igrid = 1, grid%ngrids
   elseif (ihlump == 2) then
 
     do ie1 = 1, grid%nedge(igrid)
-      temp = 0.0d0
+      temp = 0.0_kind_real
       do ix = 1, oprs%nhsten(ie1,igrid)
         ie2 = oprs%hsten(ie1,ix,igrid)
         temp = temp + abs(oprs%hstar(ie1,ix,igrid))
@@ -508,18 +504,17 @@ real(kind=kind_real) :: relax
 if (grid%nefmx == 4) then
   ! use sparse approximate inverse on cubed sphere
   llump = .false.
-  relax = 0.9d0
+  relax = 0.9_kind_real
 else
   ! Use diagonal approximate inverse on hexagonal-icosahedral grid
   llump = .false.
-  relax = 1.4d0
+  relax = 1.4_kind_real
 endif
 
 if (llump) then
 
   ! Diagonal operator: stencil size is 1
   oprs%nxmisx = 1
-  allocate(oprs%nxminvsten(grid%nedgex,grid%ngrids))
   allocate(oprs%xminvsten(grid%nedgex,oprs%nxmisx,grid%ngrids))
   allocate(oprs%xminv(grid%nedgex,oprs%nxmisx,grid%ngrids))
   do igrid = 1, grid%ngrids
@@ -528,7 +523,7 @@ if (llump) then
       ! inverse of the diagonal term of the lumped matrix
       oprs%nxminvsten(ie0,igrid) = 1
       oprs%xminvsten(ie0,1,igrid) = ie0
-      oprs%xminv(ie0,1,igrid) = 1.0d0/oprs%mlump(ie0,igrid)
+      oprs%xminv(ie0,1,igrid) = 1.0_kind_real/oprs%mlump(ie0,igrid)
     enddo
   enddo
 
@@ -536,7 +531,6 @@ else
 
   ! Stencil is the same as for M itself
   oprs%nxmisx = oprs%nmsmx
-  allocate(oprs%nxminvsten(grid%nedgex,grid%ngrids))
   allocate(oprs%xminvsten(grid%nedgex,oprs%nxmisx,grid%ngrids))
   allocate(oprs%xminv(grid%nedgex,oprs%nxmisx,grid%ngrids))
   do igrid = 1, grid%ngrids
@@ -547,9 +541,9 @@ else
         ie1 = oprs%msten(ie0,ix,igrid)
         oprs%xminvsten(ie0,ix,igrid) = ie1
         if (ie1 == ie0) then
-          diag = 1.0d0 + relax
+          diag = 1.0_kind_real + relax
         else
-          diag = 0.0d0
+          diag = 0.0_kind_real
         endif
         temp = oprs%mmass(ie0,ix,igrid)/oprs%mlump(ie1,igrid)
         oprs%xminv(ie0,ix,igrid) = (diag - relax*temp)/oprs%mlump(ie0,igrid)
@@ -577,7 +571,7 @@ integer :: if1, if2, ix
 real(kind=kind_real) :: temp
 
 do if1 = 1, nf
-  temp = 0.0d0
+  temp = 0.0_kind_real
   do ix = 1, oprs%nlsten(if1,igrid)
     if2 = oprs%lsten(if1,ix,igrid)
     temp = temp + f1(if2)*oprs%lmass(if1,ix,igrid)
@@ -603,7 +597,7 @@ integer :: ie1, ie2, ix
 real(kind=kind_real) :: temp
 
 do ie1 = 1, ne
-  temp = 0.0d0
+  temp = 0.0_kind_real
   do ix = 1, oprs%nmsten(ie1,igrid)
     ie2 = oprs%msten(ie1,ix,igrid)
     temp = temp + f1(ie2)*oprs%mmass(ie1,ix,igrid)
@@ -630,7 +624,7 @@ integer :: ie1, ie2, ix
 real(kind=kind_real) :: temp
 
 do ie1 = 1, ne
-  temp = 0.0d0
+  temp = 0.0_kind_real
   do ix = 1, oprs%nxminvsten(ie1,igrid)
     ie2 = oprs%xminvsten(ie1,ix,igrid)
     temp = temp + f1(ie2)*oprs%xminv(ie1,ix,igrid)
@@ -657,7 +651,7 @@ integer :: iv1, iv2, ix
 real(kind=kind_real) :: temp
 
 do iv1 = 1, nv
-  temp = 0.0d0
+  temp = 0.0_kind_real
   do ix = 1, oprs%njsten(iv1,igrid)
     iv2 = oprs%jsten(iv1,ix,igrid)
     temp = temp + f1(iv2)*oprs%jstar(iv1,ix,igrid)
@@ -685,7 +679,7 @@ integer :: ie1, ie2, ix
 real(kind=kind_real) :: temp
 
 do ie1 = 1, ne
-  temp = 0.0d0
+  temp = 0.0_kind_real
   do ix = 1, oprs%nhsten(ie1,igrid)
     ie2 = oprs%hsten(ie1,ix,igrid)
     temp = temp + f1(ie2)*oprs%hstar(ie1,ix,igrid)
@@ -723,9 +717,9 @@ real(kind=kind_real) :: relax
 
 ! Underrelaxation coefficient depends on grid
 IF (grid%nefmx == 4) THEN
-  relax = 0.9d0
+  relax = 0.9_kind_real
 ELSE
-  relax = 1.4d0
+  relax = 1.4_kind_real
 ENDIF
 
 miter = ABS(niter)
@@ -776,7 +770,7 @@ IF (nf2 .ne. grid%nface(igrid)) THEN
 ENDIF
 
 do if2 = 1, nf2
-  f2(if2) = 0.0d0
+  f2(if2) = 0.0_kind_real
   do ix = 1, oprs%ninj(if2,igrid)
     if1 = oprs%injsten(if2,ix,igrid)
     wgt = oprs%injwgt(if2,ix,igrid)
@@ -821,7 +815,7 @@ ENDIF
 
 igridp = igrid + 1
 temp2(1:nf2) = f2(1:nf2)/grid%farea(1:nf2,igrid)
-temp1 = 0.0d0
+temp1 = 0.0_kind_real
 do if2 = 1, nf2
   f2if2 = temp2(if2)
   do ix = 1, oprs%ninj(if2,igrid)
@@ -965,13 +959,13 @@ real(kind=kind_real) :: temp1(grid%nfacex)
 allocate(ff(grid%nfacex,grid%ngrids),rf(grid%nfacex,grid%ngrids))
 
 ! Initialize solution to zero
-phi = 0.0d0
+phi = 0.0_kind_real
 
 ! Initialize rhs on finest grid
 rf(:,grid%ngrids) = rr(:)
 
 ! Initialize correction to solution on all grids to zero
-ff = 0.0d0
+ff = 0.0_kind_real
 
 ! Descending part of V-cycle
 do jgrid = grid%ngrids-1, grid%ngrids-ng+1, -1
@@ -992,7 +986,7 @@ do jgrid = grid%ngrids-1, grid%ngrids-ng+1, -1
   call restrict(grid,oprs,temp1,nf1,rf(1,jgrid),nf2,jgrid)
 
   ! Set correction first guess to zero on grid jgrid
-  ff(1:nf2,jgrid) = 0.0d0
+  ff(1:nf2,jgrid) = 0.0_kind_real
 
 enddo
 
@@ -1000,7 +994,7 @@ enddo
 jgrid = grid%ngrids-ng+1
 nf1 = grid%nface(jgrid)
 ne1 = grid%nedge(jgrid)
-ff(1:nf1,jgrid) = 0.0d0
+ff(1:nf1,jgrid) = 0.0_kind_real
 call relax(grid,oprs,ff(1,jgrid),rf(1,jgrid),jgrid,nf1,ne1,niterc)
 
 ! Ascending part of V-cycle
@@ -1077,7 +1071,7 @@ do if1 = 1, nf
   psi0(if1) = COS(lat)*SIN(long)
 enddo
 ! Plus small-scale part
-psi0(10) = 10.0d0*psi0(10)
+psi0(10) = 10.0_kind_real*psi0(10)
 ! Remove global mean (to ensure unambiguous result)
 psibar = SUM(psi0*grid%farea(:,grid%ngrids))/SUM(grid%farea(:,grid%ngrids))
 psi0 = psi0 - psibar
@@ -1094,8 +1088,8 @@ call laplace(grid,oprs,ff1,zeta,grid%ngrids,nf,ne)
 
 ! Initialize result to zero
 ! Note psi will be stream function times grid cell area
-psi = 0.0d0
-temp2 = 0.0d0
+psi = 0.0_kind_real
+temp2 = 0.0_kind_real
 
 ! Iterate several passes
 do ipass = 1, npass
