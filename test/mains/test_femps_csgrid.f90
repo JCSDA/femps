@@ -6,14 +6,10 @@ use femps_operators_mod
 use femps_testgrid_mod
 use femps_solve_mod
 
-!use mpi
-!use netcdf
-
 implicit none
 type(fempsgrid) :: grid
 type(fempsoprs) :: oprs
 
-character(len=2) :: gridtype
 integer :: npass = 10 ! Number of passes
 integer :: nf, ne, nv, if1, ipass, nprt
 real(kind=kind_real), allocatable :: psi0(:), zeta(:), psi(:), ff1(:), ff2(:), ff3(:), ff4(:), &
@@ -22,18 +18,10 @@ real(kind=kind_real) :: long, lat, psibar
 real(kind=kind_real) :: rms, rms_ref, rms_rel
 
 
-! Choose grid type
-! ----------------
-gridtype = 'cs'      !Cubesphere (cs) or icosahedral hexagons (ix)
-
-
 ! Create a grid
 ! -------------
-call grid%setup(gridtype)
-
-if (gridtype == 'cs') then
-  call cstestgrid(grid,1,3)
-endif
+call grid%setup('cs')
+call cstestgrid(grid,1,3)
 
 
 ! Perform all the setup
