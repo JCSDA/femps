@@ -75,6 +75,7 @@ include_directories( ${FEMPS_INCLUDE_DIRS}
                      ${FEMPS_EXTRA_INCLUDE_DIRS} )
 
 add_subdirectory( src )
+add_subdirectory( test )
 
 ################################################################################
 # Finalise configuration

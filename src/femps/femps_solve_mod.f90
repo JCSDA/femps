@@ -9,7 +9,7 @@ use femps_kinds_mod
 implicit none
 private
 
-public preliminary, testpoisson
+public preliminary, laplace, massL, Ddual1, massMinv, Dprimal2, mgsolve
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -26,6 +26,12 @@ type(fempsgrid), intent(inout) :: grid
 type(fempsoprs), intent(inout) :: oprs
 
 integer :: igrid
+
+! Build the operators
+! -------------------
+call oprs%setup(grid)
+call oprs%build(grid)
+call oprs%pdelete()
 
 ! Dimensionalize
 ! --------------
@@ -1029,107 +1035,6 @@ phi = phi + ff(:,grid%ngrids)
 deallocate(ff,rf)
 
 end subroutine mgsolve
-
-! --------------------------------------------------------------------------------------------------
-
-subroutine testpoisson(grid,oprs)
-
-! To test the solution of thePoisson problem
-
-implicit none
-type(fempsgrid), intent(in) :: grid
-type(fempsoprs), intent(in) :: oprs
-
-! Number of passes
-integer :: npass = 10
-integer :: nf, ne, nv, if1, ipass, nprt
-real(kind=kind_real), allocatable :: psi0(:), zeta(:), psi(:), ff1(:), ff2(:), ff3(:), ff4(:), &
-                                     temp1(:), temp2(:)
-real(kind=kind_real) :: long, lat, psibar
-
-nf = grid%nface(grid%ngrids)
-ne = grid%nedge(grid%ngrids)
-nv = grid%nvert(grid%ngrids)
-
-print *,' '
-print *,'--------------------------'
-print *,' '
-print *,'Testing mgsolve '
-print *,' '
-
-! Number of values to print for testing
-nprt = 5
-
-allocate(psi0(nf),zeta(nf),psi(nf),ff1(nf),ff2(nf),ff3(nf),ff4(nf),temp1(ne),temp2(ne))
-
-! Set up test data
-! Large-scale part
-do if1 = 1, nf
-  long = grid%flong(if1,grid%ngrids)
-  lat = grid%flat(if1,grid%ngrids)
-  ! psi0(if1) = SIN(lat)
-  psi0(if1) = COS(lat)*SIN(long)
-enddo
-! Plus small-scale part
-psi0(10) = 10.0_kind_real*psi0(10)
-! Remove global mean (to ensure unambiguous result)
-psibar = SUM(psi0*grid%farea(:,grid%ngrids))/SUM(grid%farea(:,grid%ngrids))
-psi0 = psi0 - psibar
-! Convert to area integrals
-ff1 = psi0*grid%farea(:,grid%ngrids)
-print *,'Original field ff1 =     ',ff1(1:nprt)
-print *,' '
-
-! Calculate laplacian
-call laplace(grid,oprs,ff1,zeta,grid%ngrids,nf,ne)
-
-
-! Now invert laplacian to check we get back to where we started
-
-! Initialize result to zero
-! Note psi will be stream function times grid cell area
-psi = 0.0_kind_real
-temp2 = 0.0_kind_real
-
-! Iterate several passes
-do ipass = 1, npass
-
-  print *,'Pass ',ipass
-
-  ! Compute residual based on latest estimate
-  call massL(oprs,psi,ff2,grid%ngrids,nf)
-
-  call Ddual1(grid,ff2,temp1,grid%ngrids,nf,ne)
-
-  ! Improve the estimate temp2 that we obtained in the previous pass
-  call massMinv(grid,oprs,temp1,temp2,grid%ngrids,ne,4)
-
-  call Dprimal2(grid,oprs,temp2,ff3,grid%ngrids,ne,nf)
-
-  ! Residual
-  ff4 = zeta - ff3
-
-  ! Now solve the approximate Poisson equation
-  ! D2 xminv D1bar L psi' = residual
-  call mgsolve(grid,oprs,ff3,ff4,grid%ngrids)
-
-  ! And increment best estimate
-  ! *** We could think about adding beta*ff3 here and tuning beta for optimal convergence ***
-  psi = psi + ff3
-
-  ! Remove global mean (to ensure unambiguous result)
-  psibar = SUM(psi)/SUM(grid%farea(:,grid%ngrids))
-  psi = psi - psibar*grid%farea(:,grid%ngrids)
-
-  print *,'Original field ff1      = ',ff1(1:nprt)
-  print *,'Soln of Poisson eqn psi = ', psi(1:nprt)
-  ff4 = (ff1-psi)/grid%farea(:,grid%ngrids)
-  print *,'RMS err in global problem = ',sqrt(sum(ff4*ff4)/nf)
-  print *,' '
-
-enddo
-
-end subroutine testpoisson
 
 ! --------------------------------------------------------------------------------------------------
 
