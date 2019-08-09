@@ -1,0 +1,18 @@
+! Namelists for FEM SWE Poisson solver
+!
+! Basic information in the run
+&rundata
+  ygridfile = 'gridopermap_eqcu_0000055296.dat',
+&END
+!
+! ygridfile = 'gridopermap_hexa_0000000642.dat'
+! ygridfile = 'gridopermap_hexa_0000002562.dat'
+! ygridfile = 'gridopermap_hexa_0000010242.dat'
+! ygridfile = 'gridopermap_hexa_0000040962.dat'
+! ygridfile = 'gridopermap_hexa_0000163842.dat'
+! ygridfile = 'gridopermap_cube_0000000864.dat'
+! ygridfile = 'gridopermap_cube_0000003456.dat'
+! ygridfile = 'gridopermap_cube_0000013824.dat'
+! ygridfile = 'gridopermap_cube_0000055296.dat'
+! ygridfile = 'gridopermap_cube_0000221184.dat'
+! ygridfile = 'gridopermap_cube_0000884736.dat'
