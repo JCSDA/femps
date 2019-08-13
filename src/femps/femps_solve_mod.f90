@@ -79,8 +79,7 @@ do igrid = 1, grid%ngrids
   elseif (grid%nefmx == 4) then
     oprs%underrel(igrid) = 0.8_kind_real
   else
-    print *,'Choose a sensible value for underrel in buildlap'
-    stop 1
+    call message('Choose a sensible value for underrel in buildlap',fatal)
   endif
 enddo
 
@@ -218,6 +217,7 @@ type(fempsoprs), intent(inout) :: oprs
 integer, parameter :: ijlump = 3
 integer :: igrid, iv1, nv
 real(kind=kind_real), allocatable :: p1(:), jp1(:)
+character(len=2056) :: errormessage
 
 do igrid = 1, grid%ngrids
 
@@ -247,8 +247,8 @@ do igrid = 1, grid%ngrids
 
   else
 
-    print *,'option ijlump = ',ijlump,' not available in subroutine buildjlump'
-    stop 1
+    write(errormessage,*) 'option ijlump = ',ijlump,' not available in subroutine buildjlump'
+    call message(errormessage,fatal)
 
   endif
 
@@ -277,6 +277,7 @@ real(kind=kind_real) :: temp, slon, slat, clon, clat, a1, a2, a3, num, den
 real(kind=kind_real), allocatable :: psi1(:), psi2(:), psi3(:),    &
                                      v1(:), v2(:), v3(:), vv(:),   &
                                      mv1(:), mv2(:), mv3(:)
+character(len=2056) :: errormessage
 
 do igrid = 1, grid%ngrids
 
@@ -341,8 +342,8 @@ do igrid = 1, grid%ngrids
 
   else
 
-    print *,'option imlump = ',imlump,' not available in subroutine buildmlump'
-    stop 1
+    write(errormessage,*) 'option imlump = ',imlump,' not available in subroutine buildmlump'
+    call message(errormessage,fatal)
 
   endif
 
@@ -371,6 +372,7 @@ real(kind=kind_real) :: temp, slon, slat, clon, clat, a1, a2, a3, num, den
 real(kind=kind_real), allocatable :: psi1(:), psi2(:), psi3(:),  &
                                      v1(:), v2(:), v3(:),        &
                                      hv1(:), hv2(:), hv3(:)
+character(len=2056) :: errormessage
 
 do igrid = 1, grid%ngrids
 
@@ -469,8 +471,8 @@ do igrid = 1, grid%ngrids
 
   else
 
-    print *,'option ihlump = ',ihlump,' not available in subroutine buildhlump'
-    stop 1
+    write(errormessage,*) 'option ihlump = ',ihlump,' not available in subroutine buildhlump'
+    call message(errormessage,fatal)
 
   endif
 
@@ -766,8 +768,7 @@ real(kind=kind_real) :: wgt
 
 ! Safety check
 if (nf2 .ne. grid%nface(igrid)) then
-  print *,'Wrong size array in subroutine restrict'
-  stop 1
+  call message('Wrong size array in subroutine restrict',fatal)
 endif
 
 do if2 = 1, nf2
@@ -810,8 +811,7 @@ real(kind=kind_real) :: wgt, f2if2, temp1(nf1), temp2(nf2)
 
 ! Safety check
 if (nf2 .ne. grid%nface(igrid)) then
-  print *,'Wrong size array in subroutine prolong'
-  stop 1
+  call message('Wrong size array in subroutine prolong',fatal)
 endif
 
 igridp = igrid + 1
@@ -964,7 +964,6 @@ real(kind=kind_real), intent(out) :: res(nf)
 
 call xlaplace(grid,oprs,igrid,f,res)
 res = rhs - res
-!print *,'     residual: ',res(1:5)
 
 end subroutine residual
 
@@ -1092,7 +1091,6 @@ phi = phi + ff(:,grid%ngrids)
 !  nf1 = grid%nface(grid%ngrids)
 !  ne1 = grid%nedge(grid%ngrids)
 !  call residual(grid,oprs,phi,rr,temp1,grid%ngrids,nf1)
-!  print *,'     RMS residual in mgsolve = ',SQRT(SUM(temp1*temp1)/nf1)
 
 deallocate(ff,rf)
 

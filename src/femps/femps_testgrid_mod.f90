@@ -31,6 +31,27 @@ integer, optional, intent(in)    :: nsmooth_in
 ! For flavour 2, nsmooth = 1 is recommended. It must be at least 1 for a consistent FV H operator.
 ! For flavour 3, nsmooth = 3 is recommended.
 
+! Module to generate a cubed sphere grid, including cross-
+! reference tables of adjacent faces, edges and vertices,
+! coordinates of faces and vertices, and lengths of edges
+! and areas of faces.
+!         .....
+!        :  3  |
+!        :     |
+!         -----
+!  -----  .....  .....  -----
+! |  5  :|  1  :|  2  :|  4  :
+! |     :|     :|     :|     :
+!  .....  -----  -----  .....
+!         .....
+!        |  6  :
+!        |     :
+!         -----
+! Solid lines: left and bottom edges of panel
+! Dotted lines: right and top edges of panel
+! John Thuburn Nov 2011
+! Updated to include equiangular and centroidal variants 25/6/15
+
 integer :: igrid, i, j, ixv, p1, p2, pp, jr, iv, iv0, n, n2, &
            ie0, ie1, ie2, if0, if1, if2, if3, iv1, iv2, ix1, ix2, &
            ixmin, ifmin, if21, if22, iv11, iv12, iv21, iv22, &
@@ -46,6 +67,7 @@ real(kind=kind_real) :: pi, dlambda, lambda1, lambda2, t1, t2, long, lat, &
                         amin, amax
 
 logical :: lfound
+character(len=2056) :: gridmessage
 
 ! Default setup
 ! -------------
@@ -57,337 +79,337 @@ if (present(nsmooth_in)) nsmooth = nsmooth_in
 
 ! Constants
 ! ---------
-piby4 = ATAN(1.0_kind_real)
+piby4 = atan(1.0_kind_real)
 pi = 4.0_kind_real*piby4
 
 
 ! Generate the grid
 ! -----------------
-DO igrid = 1, grid%ngrids
+do igrid = 1, grid%ngrids
 
-! Size of panels on this grid
-n = grid%n0*(2**(igrid-1))
-n2 = n*n
-dlambda = 0.5_kind_real*pi/n
+  ! Size of panels on this grid
+  n = grid%n0*(2**(igrid-1))
+  n2 = n*n
+  dlambda = 0.5_kind_real*pi/n
 
-grid%nface(igrid) = 6*n2
-grid%nedge(igrid) = 2*grid%nface(igrid)
-grid%nvert(igrid) = grid%nface(igrid) + 2
+  grid%nface(igrid) = 6*n2
+  grid%nedge(igrid) = 2*grid%nface(igrid)
+  grid%nvert(igrid) = grid%nface(igrid) + 2
 
-!
-! Loop over vertices/faces of one panel
-DO j = 1, n
-  lambda2 = (j-1)*dlambda - piby4
-  lambdaf2 = (j-0.5_kind_real)*dlambda - piby4
-  t2 = TAN(lambda2)
-  tf2 = TAN(lambdaf2)
-  DO i = 1, n
-    lambda1 = (i-1)*dlambda - piby4
-    lambdaf1 = (i-0.5_kind_real)*dlambda - piby4
-    t1 = TAN(lambda1)
-    tf1 = TAN(lambdaf1)
+  !
+  ! Loop over vertices/faces of one panel
+  do j = 1, n
+    lambda2 = (j-1)*dlambda - piby4
+    lambdaf2 = (j-0.5_kind_real)*dlambda - piby4
+    t2 = tan(lambda2)
+    tf2 = tan(lambdaf2)
+    do i = 1, n
+      lambda1 = (i-1)*dlambda - piby4
+      lambdaf1 = (i-0.5_kind_real)*dlambda - piby4
+      t1 = tan(lambda1)
+      tf1 = tan(lambdaf1)
 
-!   Set up coordinates of vertices and faces
-!   Panel 1
-!   Index of vertex
-    ixv = (j-1)*n + i
-!   Cartesian coordinates of vertex
-    x1 = 1.0_kind_real/SQRT(1.0_kind_real + t1*t1 + t2*t2)
-    y1 = x1*t1
-    z1 = x1*t2
-!   Lat long coordinates of vertex
-    CALL xyz2ll(x1,y1,z1,long,lat)
-    grid%vlong(ixv,igrid) = long
-    grid%vlat(ixv,igrid) = lat
-!   Cartesian coordinates of face
-    xf1 = 1.0_kind_real/SQRT(1.0_kind_real + tf1*tf1 + tf2*tf2)
-    yf1 = xf1*tf1
-    zf1 = xf1*tf2
-!   Lat long coordinates of face
-    CALL xyz2ll(xf1,yf1,zf1,long,lat)
-    grid%flong(ixv,igrid) = long
-    grid%flat(ixv,igrid) = lat
+  !   Set up coordinates of vertices and faces
+  !   Panel 1
+  !   Index of vertex
+      ixv = (j-1)*n + i
+  !   Cartesian coordinates of vertex
+      x1 = 1.0_kind_real/sqrt(1.0_kind_real + t1*t1 + t2*t2)
+      y1 = x1*t1
+      z1 = x1*t2
+  !   Lat long coordinates of vertex
+      call xyz2ll(x1,y1,z1,long,lat)
+      grid%vlong(ixv,igrid) = long
+      grid%vlat(ixv,igrid) = lat
+  !   Cartesian coordinates of face
+      xf1 = 1.0_kind_real/sqrt(1.0_kind_real + tf1*tf1 + tf2*tf2)
+      yf1 = xf1*tf1
+      zf1 = xf1*tf2
+  !   Lat long coordinates of face
+      call xyz2ll(xf1,yf1,zf1,long,lat)
+      grid%flong(ixv,igrid) = long
+      grid%flat(ixv,igrid) = lat
 
-!   Panel 2
-!   Index of vertex
-    ixv = ixv + n2
-!   Cartesian coordinates of vertex
-    x2 = -y1
-    y2 = x1
-    z2 = z1
-!   Lat long coordinates of vertex
-    CALL xyz2ll(x2,y2,z2,long,lat)
-    grid%vlong(ixv,igrid) = long
-    grid%vlat(ixv,igrid) = lat
-!   Cartesian coordinates of face
-    xf2 = -yf1
-    yf2 = xf1
-    zf2 = zf1
-!   Lat long coordinates of face
-    CALL xyz2ll(xf2,yf2,zf2,long,lat)
-    grid%flong(ixv,igrid) = long
-    grid%flat(ixv,igrid) = lat
+  !   Panel 2
+  !   Index of vertex
+      ixv = ixv + n2
+  !   Cartesian coordinates of vertex
+      x2 = -y1
+      y2 = x1
+      z2 = z1
+  !   Lat long coordinates of vertex
+      call xyz2ll(x2,y2,z2,long,lat)
+      grid%vlong(ixv,igrid) = long
+      grid%vlat(ixv,igrid) = lat
+  !   Cartesian coordinates of face
+      xf2 = -yf1
+      yf2 = xf1
+      zf2 = zf1
+  !   Lat long coordinates of face
+      call xyz2ll(xf2,yf2,zf2,long,lat)
+      grid%flong(ixv,igrid) = long
+      grid%flat(ixv,igrid) = lat
 
-!   Panel 3
-!   Index of vertex
-    ixv = ixv + n2
-!   Cartesian coordinates of vertex
-    x3 = x2
-    y3 = -z2
-    z3 = y2
-!   Lat long coordinates of vertex
-    CALL xyz2ll(x3,y3,z3,long,lat)
-    grid%vlong(ixv,igrid) = long
-    grid%vlat(ixv,igrid) = lat
-!   Cartesian coordinates of face
-    xf3 = xf2
-    yf3 = -zf2
-    zf3 = yf2
-!   Lat long coordinates of face
-    CALL xyz2ll(xf3,yf3,zf3,long,lat)
-    grid%flong(ixv,igrid) = long
-    grid%flat(ixv,igrid) = lat
+  !   Panel 3
+  !   Index of vertex
+      ixv = ixv + n2
+  !   Cartesian coordinates of vertex
+      x3 = x2
+      y3 = -z2
+      z3 = y2
+  !   Lat long coordinates of vertex
+      call xyz2ll(x3,y3,z3,long,lat)
+      grid%vlong(ixv,igrid) = long
+      grid%vlat(ixv,igrid) = lat
+  !   Cartesian coordinates of face
+      xf3 = xf2
+      yf3 = -zf2
+      zf3 = yf2
+  !   Lat long coordinates of face
+      call xyz2ll(xf3,yf3,zf3,long,lat)
+      grid%flong(ixv,igrid) = long
+      grid%flat(ixv,igrid) = lat
 
-!   Panel 4
-!   Index of vertex
-    ixv = ixv + n2
-!   Cartesian coordinates of vertex
-    x4 = -z3
-    y4 = y3
-    z4 = x3
-!   Lat long coordinates of vertex
-    CALL xyz2ll(x4,y4,z4,long,lat)
-    grid%vlong(ixv,igrid) = long
-    grid%vlat(ixv,igrid) = lat
-!   Cartesian coordinates of face
-    xf4 = -zf3
-    yf4 = yf3
-    zf4 = xf3
-!   Lat long coordinates of face
-    CALL xyz2ll(xf4,yf4,zf4,long,lat)
-    grid%flong(ixv,igrid) = long
-    grid%flat(ixv,igrid) = lat
+  !   Panel 4
+  !   Index of vertex
+      ixv = ixv + n2
+  !   Cartesian coordinates of vertex
+      x4 = -z3
+      y4 = y3
+      z4 = x3
+  !   Lat long coordinates of vertex
+      call xyz2ll(x4,y4,z4,long,lat)
+      grid%vlong(ixv,igrid) = long
+      grid%vlat(ixv,igrid) = lat
+  !   Cartesian coordinates of face
+      xf4 = -zf3
+      yf4 = yf3
+      zf4 = xf3
+  !   Lat long coordinates of face
+      call xyz2ll(xf4,yf4,zf4,long,lat)
+      grid%flong(ixv,igrid) = long
+      grid%flat(ixv,igrid) = lat
 
-!   Panel 5
-!   Index of vertex
-    ixv = ixv + n2
-!   Cartesian coordinates of vertex
-    x5 = -y4
-    y5 = x4
-    z5 = z4
-!   Lat long coordinates of vertex
-    CALL xyz2ll(x5,y5,z5,long,lat)
-    grid%vlong(ixv,igrid) = long
-    grid%vlat(ixv,igrid) = lat
-!   Cartesian coordinates of face
-    xf5 = -yf4
-    yf5 = xf4
-    zf5 = zf4
-!   Lat long coordinates of face
-    CALL xyz2ll(xf5,yf5,zf5,long,lat)
-    grid%flong(ixv,igrid) = long
-    grid%flat(ixv,igrid) = lat
+  !   Panel 5
+  !   Index of vertex
+      ixv = ixv + n2
+  !   Cartesian coordinates of vertex
+      x5 = -y4
+      y5 = x4
+      z5 = z4
+  !   Lat long coordinates of vertex
+      call xyz2ll(x5,y5,z5,long,lat)
+      grid%vlong(ixv,igrid) = long
+      grid%vlat(ixv,igrid) = lat
+  !   Cartesian coordinates of face
+      xf5 = -yf4
+      yf5 = xf4
+      zf5 = zf4
+  !   Lat long coordinates of face
+      call xyz2ll(xf5,yf5,zf5,long,lat)
+      grid%flong(ixv,igrid) = long
+      grid%flat(ixv,igrid) = lat
 
-!   Panel 6
-!   Index of vertex
-    ixv = ixv + n2
-!   Cartesian coordinates of vertex
-    x6 = x5
-    y6 = -z5
-    z6 = y5
-!   Lat long coordinates of vertex
-    CALL xyz2ll(x6,y6,z6,long,lat)
-    grid%vlong(ixv,igrid) = long
-    grid%vlat(ixv,igrid) = lat
-!   Cartesian coordinates of face
-    xf6 = xf5
-    yf6 = -zf5
-    zf6 = yf5
-!   Lat long coordinates of face
-    CALL xyz2ll(xf6,yf6,zf6,long,lat)
-    grid%flong(ixv,igrid) = long
-    grid%flat(ixv,igrid) = lat
+  !   Panel 6
+  !   Index of vertex
+      ixv = ixv + n2
+  !   Cartesian coordinates of vertex
+      x6 = x5
+      y6 = -z5
+      z6 = y5
+  !   Lat long coordinates of vertex
+      call xyz2ll(x6,y6,z6,long,lat)
+      grid%vlong(ixv,igrid) = long
+      grid%vlat(ixv,igrid) = lat
+  !   Cartesian coordinates of face
+      xf6 = xf5
+      yf6 = -zf5
+      zf6 = yf5
+  !   Lat long coordinates of face
+      call xyz2ll(xf6,yf6,zf6,long,lat)
+      grid%flong(ixv,igrid) = long
+      grid%flat(ixv,igrid) = lat
 
-!   Set up incidence tables ignoring complications at
-!   panel edges
-    DO p1 = 1, 6
-      ixv = (p1 - 1)*n2 + (j-1)*n + i
+  !   Set up incidence tables ignoring complications at
+  !   panel edges
+      do p1 = 1, 6
+        ixv = (p1 - 1)*n2 + (j-1)*n + i
 
-!     Edges of the face
-      grid%eoff(ixv,1,igrid) = 2*ixv - 1
-      grid%eoff(ixv,2,igrid) = 2*ixv
-      grid%eoff(ixv,3,igrid) = 2*ixv + 1
-      grid%eoff(ixv,4,igrid) = 2*ixv + 2*n
-!     Vertices of the face
-      grid%voff(ixv,1,igrid) = ixv
-      grid%voff(ixv,2,igrid) = ixv + 1
-      grid%voff(ixv,3,igrid) = ixv + n + 1
-      grid%voff(ixv,4,igrid) = ixv + n
-!     Faces neighboring this face
-      grid%fnxtf(ixv,1,igrid) = ixv - 1
-      grid%fnxtf(ixv,2,igrid) = ixv - n
-      grid%fnxtf(ixv,3,igrid) = ixv + 1
-      grid%fnxtf(ixv,4,igrid) = ixv + n
-!     Edges incident on the vertex
-      grid%eofv(ixv,1,igrid) = 2*ixv - 2
-      grid%eofv(ixv,2,igrid) = 2*(ixv-n) - 1
-      grid%eofv(ixv,3,igrid) = 2*ixv
-      grid%eofv(ixv,4,igrid) = 2*ixv - 1
+  !     Edges of the face
+        grid%eoff(ixv,1,igrid) = 2*ixv - 1
+        grid%eoff(ixv,2,igrid) = 2*ixv
+        grid%eoff(ixv,3,igrid) = 2*ixv + 1
+        grid%eoff(ixv,4,igrid) = 2*ixv + 2*n
+  !     Vertices of the face
+        grid%voff(ixv,1,igrid) = ixv
+        grid%voff(ixv,2,igrid) = ixv + 1
+        grid%voff(ixv,3,igrid) = ixv + n + 1
+        grid%voff(ixv,4,igrid) = ixv + n
+  !     Faces neighboring this face
+        grid%fnxtf(ixv,1,igrid) = ixv - 1
+        grid%fnxtf(ixv,2,igrid) = ixv - n
+        grid%fnxtf(ixv,3,igrid) = ixv + 1
+        grid%fnxtf(ixv,4,igrid) = ixv + n
+  !     Edges incident on the vertex
+        grid%eofv(ixv,1,igrid) = 2*ixv - 2
+        grid%eofv(ixv,2,igrid) = 2*(ixv-n) - 1
+        grid%eofv(ixv,3,igrid) = 2*ixv
+        grid%eofv(ixv,4,igrid) = 2*ixv - 1
 
-    ENDDO
+      enddo
 
-  ENDDO
-ENDDO
+    enddo
+  enddo
 
 
-! Now sort out complications at panel edges
-DO j = 1, n
-  jr = n + 1 - j
+  ! Now sort out complications at panel edges
+  do j = 1, n
+    jr = n + 1 - j
 
-  DO pp = 1, 3
+    do pp = 1, 3
 
-    ! Odd numbered panels
+      ! Odd numbered panels
+      p1 = 2*pp - 1
+
+      ! Left edge of panel p1 joins to top edge of panel p1 - 2
+      ! Reverse order
+      p2 = modulo(p1 + 3, 6) + 1
+      ixv = (p1 - 1)*n2 + n*(j - 1) + 1
+      grid%fnxtf(ixv,1,igrid) = p2*n2 - n + jr
+      grid%eofv(ixv,1,igrid) = 2*p2*n2 - 2*n - 1 + 2*(jr + 1)
+
+      ! Bottom edge of panel p1 joins to top edge of panel p1 - 1
+      p2 = modulo(p1 + 4, 6) + 1
+      ixv = (p1 - 1)*n2 + j
+      grid%fnxtf(ixv,2,igrid) = p2*n2 - n + j
+      grid%eofv(ixv,2,igrid) = 2*p2*n2 - 2*n - 1 + 2*j
+
+      ! Right edge of panel p1 joins to left edge of panel p1 + 1
+      p2 = modulo(p1, 6) + 1
+      ixv = (p1 - 1)*n2 + n*j
+      grid%eoff(ixv,3,igrid) = 2*(p2 - 1)*n2 + 2*(j - 1)*n + 1
+      grid%voff(ixv,2,igrid) = (p2 - 1)*n2 + (j - 1)*n + 1
+      grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + j*n + 1
+      grid%fnxtf(ixv,3,igrid) = (p2 - 1)*n2 + (j - 1)*n + 1
+
+      ! Top edge of panel p1 joins to left edge of panel p1 + 2
+      ! Reverse order
+      p2 = modulo(p1 + 1, 6) + 1
+      ixv = p1*n2 - n + j
+      grid%eoff(ixv,4,igrid) = 2*(p2 - 1)*n2 + 2*(jr - 1)*n + 1
+      grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + (jr - 1)*n + 1
+      grid%voff(ixv,4,igrid) = (p2 - 1)*n2 + jr*n + 1
+      grid%fnxtf(ixv,4,igrid) = (p2 - 1)*n2 + (jr - 1)*n + 1
+
+      ! Even numbered panels
+      p1 = 2*pp
+
+      ! Left edge of panel p1 joins to right edge of panel p1 - 1
+      p2 = modulo(p1 + 4, 6) + 1
+      ixv = (p1 - 1)*n2 + n*(j - 1) + 1
+      grid%fnxtf(ixv,1,igrid) = (p2 - 1)*n2 + n*j
+      grid%eofv(ixv,1,igrid) = 2*(p2 - 1)*n2 + 2*n*j
+
+      ! Bottom edge of panel p1 joins to right edge of panel p1 - 2
+      ! Reverse order
+      p2 = modulo(p1 + 3, 6) + 1
+      ixv = (p1 - 1)*n2 + j
+      grid%fnxtf(ixv,2,igrid) = (p2 - 1)*n2 + n*jr
+      grid%eofv(ixv,2,igrid) = 2*(p2 - 1)*n2 + 2*n*(jr + 1)
+
+      ! Top edge of panel p1 joins to bottom edge of panel p1 + 1
+      p2 = modulo(p1, 6) + 1
+      ixv = p1*n2 - n + j
+      grid%eoff(ixv,4,igrid) = 2*(p2 - 1)*n2 + 2*j
+      grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + j + 1
+      grid%voff(ixv,4,igrid) = (p2 - 1)*n2 + j
+      grid%fnxtf(ixv,4,igrid) = (p2 - 1)*n2 + j
+
+      ! Right edge of panel p1 joins to bottom edge of panel p1 + 2
+      ! Reverse order
+      p2 = modulo(p1 + 1, 6) + 1
+      ixv = (p1-1)*n2 + n*j
+      grid%eoff(ixv,3,igrid) = 2*(p2 - 1)*n2 + 2*jr
+      grid%voff(ixv,2,igrid) = (p2 - 1)*n2 + jr + 1
+      grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + jr
+      grid%fnxtf(ixv,3,igrid) = (p2 - 1)*n2 + jr
+
+    enddo
+
+  enddo
+
+  ! All faces have 4 edges and vertices
+  grid%neoff(1:grid%nface(igrid),igrid) = 4
+
+  ! Almost all vertices have 4 edges (exceptions dealt with below)
+  grid%neofv(1:grid%nvert(igrid),igrid) = 4
+
+  ! Vertices not correctly captured by the above
+  ! Corner vertices only have 3 edges
+  do pp = 1, 3
+
+    ! Bottom left of odd numbered panels
     p1 = 2*pp - 1
+    ixv = (p1 - 1)*n2 + 1
+    ! First edge needs to be deleted
+    grid%eofv(ixv,1,igrid) = grid%eofv(ixv,2,igrid)
+    grid%eofv(ixv,2,igrid) = grid%eofv(ixv,3,igrid)
+    grid%eofv(ixv,3,igrid) = grid%eofv(ixv,4,igrid)
+    grid%eofv(ixv,4,igrid) = 0
+    grid%neofv(ixv,igrid) = 3
 
-    ! Left edge of panel p1 joins to top edge of panel p1 - 2
-    ! Reverse order
-    p2 = MODULO(p1 + 3, 6) + 1
-    ixv = (p1 - 1)*n2 + n*(j - 1) + 1
-    grid%fnxtf(ixv,1,igrid) = p2*n2 - n + jr
-    grid%eofv(ixv,1,igrid) = 2*p2*n2 - 2*n - 1 + 2*(jr + 1)
-
-    ! Bottom edge of panel p1 joins to top edge of panel p1 - 1
-    p2 = MODULO(p1 + 4, 6) + 1
-    ixv = (p1 - 1)*n2 + j
-    grid%fnxtf(ixv,2,igrid) = p2*n2 - n + j
-    grid%eofv(ixv,2,igrid) = 2*p2*n2 - 2*n - 1 + 2*j
-
-    ! Right edge of panel p1 joins to left edge of panel p1 + 1
-    p2 = MODULO(p1, 6) + 1
-    ixv = (p1 - 1)*n2 + n*j
-    grid%eoff(ixv,3,igrid) = 2*(p2 - 1)*n2 + 2*(j - 1)*n + 1
-    grid%voff(ixv,2,igrid) = (p2 - 1)*n2 + (j - 1)*n + 1
-    grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + j*n + 1
-    grid%fnxtf(ixv,3,igrid) = (p2 - 1)*n2 + (j - 1)*n + 1
-
-    ! Top edge of panel p1 joins to left edge of panel p1 + 2
-    ! Reverse order
-    p2 = MODULO(p1 + 1, 6) + 1
-    ixv = p1*n2 - n + j
-    grid%eoff(ixv,4,igrid) = 2*(p2 - 1)*n2 + 2*(jr - 1)*n + 1
-    grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + (jr - 1)*n + 1
-    grid%voff(ixv,4,igrid) = (p2 - 1)*n2 + jr*n + 1
-    grid%fnxtf(ixv,4,igrid) = (p2 - 1)*n2 + (jr - 1)*n + 1
-
-    ! Even numbered panels
+    ! Bottom left of even numbered panels
     p1 = 2*pp
+    ixv = (p1 - 1)*n2 + 1
+    ! Second edge needs to be deleted
+    grid%eofv(ixv,2,igrid) = grid%eofv(ixv,3,igrid)
+    grid%eofv(ixv,3,igrid) = grid%eofv(ixv,4,igrid)
+    grid%eofv(ixv,4,igrid) = 0
+    grid%neofv(ixv,igrid) = 3
 
-    ! Left edge of panel p1 joins to right edge of panel p1 - 1
-    p2 = MODULO(p1 + 4, 6) + 1
-    ixv = (p1 - 1)*n2 + n*(j - 1) + 1
-    grid%fnxtf(ixv,1,igrid) = (p2 - 1)*n2 + n*j
-    grid%eofv(ixv,1,igrid) = 2*(p2 - 1)*n2 + 2*n*j
+  enddo
 
-    ! Bottom edge of panel p1 joins to right edge of panel p1 - 2
-    ! Reverse order
-    p2 = MODULO(p1 + 3, 6) + 1
-    ixv = (p1 - 1)*n2 + j
-    grid%fnxtf(ixv,2,igrid) = (p2 - 1)*n2 + n*jr
-    grid%eofv(ixv,2,igrid) = 2*(p2 - 1)*n2 + 2*n*(jr + 1)
+  ! Vertex 6*n2 + 1 is at top left of panels 1, 3, and 5
+  iv = 6*n2 + 1
+  lambda2 = piby4
+  t2 = tan(lambda2)
+  lambda1 = - piby4
+  t1 = tan(lambda1)
+  ! Cartesian coordinates of vertex
+  x1 = 1.0_kind_real/sqrt(1.0_kind_real + t1*t1 + t2*t2)
+  y1 = x1*t1
+  z1 = x1*t2
+  ! Lat long coordinates of vertex
+  call xyz2ll(x1,y1,z1,long,lat)
+  grid%vlong(iv,igrid) = long
+  grid%vlat(iv,igrid) = lat
+  do pp = 1, 3
+    p1 = 2*pp - 1
+    ixv = p1*n2 - n + 1
+    grid%voff(ixv,4,igrid) = iv
+    grid%eofv(iv,pp,igrid) = 2*p1*n2 - 2*n + 1
+  enddo
+  grid%neofv(iv,igrid) = 3
 
-    ! Top edge of panel p1 joins to bottom edge of panel p1 + 1
-    p2 = MODULO(p1, 6) + 1
-    ixv = p1*n2 - n + j
-    grid%eoff(ixv,4,igrid) = 2*(p2 - 1)*n2 + 2*j
-    grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + j + 1
-    grid%voff(ixv,4,igrid) = (p2 - 1)*n2 + j
-    grid%fnxtf(ixv,4,igrid) = (p2 - 1)*n2 + j
-
-    ! Right edge of panel p1 joins to bottom edge of panel p1 + 2
-    ! Reverse order
-    p2 = MODULO(p1 + 1, 6) + 1
-    ixv = (p1-1)*n2 + n*j
-    grid%eoff(ixv,3,igrid) = 2*(p2 - 1)*n2 + 2*jr
-    grid%voff(ixv,2,igrid) = (p2 - 1)*n2 + jr + 1
-    grid%voff(ixv,3,igrid) = (p2 - 1)*n2 + jr
-    grid%fnxtf(ixv,3,igrid) = (p2 - 1)*n2 + jr
-
-  ENDDO
-
-ENDDO
-
-! All faces have 4 edges and vertices
-grid%neoff(1:grid%nface(igrid),igrid) = 4
-
-! Almost all vertices have 4 edges (exceptions dealt with below)
-grid%neofv(1:grid%nvert(igrid),igrid) = 4
-
-! Vertices not correctly captured by the above
-! Corner vertices only have 3 edges
-DO pp = 1, 3
-
-  ! Bottom left of odd numbered panels
-  p1 = 2*pp - 1
-  ixv = (p1 - 1)*n2 + 1
-  ! First edge needs to be deleted
-  grid%eofv(ixv,1,igrid) = grid%eofv(ixv,2,igrid)
-  grid%eofv(ixv,2,igrid) = grid%eofv(ixv,3,igrid)
-  grid%eofv(ixv,3,igrid) = grid%eofv(ixv,4,igrid)
-  grid%eofv(ixv,4,igrid) = 0
-  grid%neofv(ixv,igrid) = 3
-
-  ! Bottom left of even numbered panels
-  p1 = 2*pp
-  ixv = (p1 - 1)*n2 + 1
-  ! Second edge needs to be deleted
-  grid%eofv(ixv,2,igrid) = grid%eofv(ixv,3,igrid)
-  grid%eofv(ixv,3,igrid) = grid%eofv(ixv,4,igrid)
-  grid%eofv(ixv,4,igrid) = 0
-  grid%neofv(ixv,igrid) = 3
-
-ENDDO
-
-! Vertex 6*n2 + 1 is at top left of panels 1, 3, and 5
-iv = 6*n2 + 1
-lambda2 = piby4
-t2 = TAN(lambda2)
-lambda1 = - piby4
-t1 = TAN(lambda1)
-! Cartesian coordinates of vertex
-x1 = 1.0_kind_real/SQRT(1.0_kind_real + t1*t1 + t2*t2)
-y1 = x1*t1
-z1 = x1*t2
-! Lat long coordinates of vertex
-CALL xyz2ll(x1,y1,z1,long,lat)
-grid%vlong(iv,igrid) = long
-grid%vlat(iv,igrid) = lat
-DO pp = 1, 3
-  p1 = 2*pp - 1
-  ixv = p1*n2 - n + 1
-  grid%voff(ixv,4,igrid) = iv
-  grid%eofv(iv,pp,igrid) = 2*p1*n2 - 2*n + 1
-ENDDO
-grid%neofv(iv,igrid) = 3
-
-! Vertex 6*n2 + 2 is at bottom right of panels 2, 4, and 6
-iv = 6*n2 + 2
-x1 = -x1
-y1 = -y1
-z1 = -z1
-! Lat long coordinates of vertex
-CALL xyz2ll(x1,y1,z1,long,lat)
-grid%vlong(iv,igrid) = long
-grid%vlat(iv,igrid) = lat
-DO pp = 1, 3
-  p1 = 2*pp
-  ixv = (p1 - 1)*n2 + n
-  grid%voff(ixv,2,igrid) = iv
-  grid%eofv(iv,pp,igrid) = 2*(p1 - 1)*n2 + 2*n
-ENDDO
-grid%neofv(iv,igrid) = 3
+  ! Vertex 6*n2 + 2 is at bottom right of panels 2, 4, and 6
+  iv = 6*n2 + 2
+  x1 = -x1
+  y1 = -y1
+  z1 = -z1
+  ! Lat long coordinates of vertex
+  call xyz2ll(x1,y1,z1,long,lat)
+  grid%vlong(iv,igrid) = long
+  grid%vlat(iv,igrid) = lat
+  do pp = 1, 3
+    p1 = 2*pp
+    ixv = (p1 - 1)*n2 + n
+    grid%voff(ixv,2,igrid) = iv
+    grid%eofv(iv,pp,igrid) = 2*(p1 - 1)*n2 + 2*n
+  enddo
+  grid%neofv(iv,igrid) = 3
 
 
-ENDDO ! End of main loop over grids
+enddo ! End of main loop over grids
 
 
 ! Now construct inverse tables
@@ -396,141 +418,141 @@ grid%fnxte = 0
 grid%vofe = 0
 grid%fofv = 0
 
-DO igrid = 1, grid%ngrids
+do igrid = 1, grid%ngrids
 
-  DO j = 1, grid%nface(igrid)
-    DO i = 1, 4
+  do j = 1, grid%nface(igrid)
+    do i = 1, 4
       ie1 = grid%eoff(j,i,igrid)
-      CALL addtab(grid%nedgex,2,grid%fnxte(1,1,igrid),ie1,j)
+      call addtab(grid%nedgex,2,grid%fnxte(1,1,igrid),ie1,j)
       ixv = grid%voff(j,i,igrid)
-      CALL addtab(grid%nvertx,4,grid%fofv(1,1,igrid),ixv,j)
-    ENDDO
-  ENDDO
+      call addtab(grid%nvertx,4,grid%fofv(1,1,igrid),ixv,j)
+    enddo
+  enddo
 
-  DO j = 1, grid%nvert(igrid)
-    DO i = 1, 4
+  do j = 1, grid%nvert(igrid)
+    do i = 1, 4
       ixv = grid%eofv(j,i,igrid)
-      IF (ixv > 0) THEN
-        CALL addtab(grid%nedgex,2,grid%vofe(1,1,igrid),ixv,j)
-      ENDIF
-    ENDDO
-  ENDDO
+      if (ixv > 0) THEN
+        call addtab(grid%nedgex,2,grid%vofe(1,1,igrid),ixv,j)
+      endif
+    enddo
+  enddo
 
-ENDDO
+enddo
 
 ! Calculate geometrical quantities
-DO igrid = 1, grid%ngrids
+do igrid = 1, grid%ngrids
 
   ! Smoothing iterations
-  IF (flavour == 1) THEN
+  if (flavour == 1) THEN
 
     ! No smoothing for equiangular cube
 
-  ELSEIF (flavour == 2) THEN
+  elseif (flavour == 2) THEN
 
     ! TCD barycentric cube
-    DO ismooth = 1, nsmooth
+    do ismooth = 1, nsmooth
 
       ! First locate face centres at barycentres of
       ! surrounding vertices
-      DO if1 = 1, grid%nface(igrid)
+      do if1 = 1, grid%nface(igrid)
         xc = 0.0_kind_real
         yc = 0.0_kind_real
         zc = 0.0_kind_real
-        DO i = 1, 4
+        do i = 1, 4
           ixv = grid%voff(if1,i,igrid)
           long = grid%vlong(ixv,igrid)
           lat = grid%vlat(ixv,igrid)
-          CALL ll2xyz(long,lat,x1,y1,z1)
+          call ll2xyz(long,lat,x1,y1,z1)
           xc = xc + x1
           yc = yc + y1
           zc = zc + z1
-        ENDDO
-        rmag = 1.0_kind_real/SQRT(xc*xc + yc*yc + zc*zc)
+        enddo
+        rmag = 1.0_kind_real/sqrt(xc*xc + yc*yc + zc*zc)
         xc = xc*rmag
         yc = yc*rmag
         zc = zc*rmag
-        CALL xyz2ll(xc,yc,zc,long,lat)
+        call xyz2ll(xc,yc,zc,long,lat)
         grid%flong(if1,igrid) = long
         grid%flat(if1,igrid) = lat
-      ENDDO
+      enddo
 
       ! Next relocate vertices at barycentres of
       ! surrounding face centres - needed for H operator
-      DO iv1 = 1, grid%nvert(igrid)
+      do iv1 = 1, grid%nvert(igrid)
         xc = 0.0_kind_real
         yc = 0.0_kind_real
         zc = 0.0_kind_real
-        DO i = 1, grid%neofv(iv1,igrid)
+        do i = 1, grid%neofv(iv1,igrid)
           if1 = grid%fofv(iv1,i,igrid)
           long = grid%flong(if1,igrid)
           lat = grid%flat(if1,igrid)
-          CALL ll2xyz(long,lat,x1,y1,z1)
+          call ll2xyz(long,lat,x1,y1,z1)
           xc = xc + x1
           yc = yc + y1
           zc = zc + z1
-        ENDDO
-        rmag = 1.0_kind_real/SQRT(xc*xc + yc*yc + zc*zc)
+        enddo
+        rmag = 1.0_kind_real/sqrt(xc*xc + yc*yc + zc*zc)
         xc = xc*rmag
         yc = yc*rmag
         zc = zc*rmag
-        CALL xyz2ll(xc,yc,zc,long,lat)
+        call xyz2ll(xc,yc,zc,long,lat)
         grid%vlong(iv1,igrid) = long
         grid%vlat(iv1,igrid) = lat
-      ENDDO
+      enddo
 
-    ENDDO
+    enddo
 
-  ELSEIF (flavour == 3) THEN
+  elseif (flavour == 3) THEN
 
     ! Centroidal cube
-    DO ismooth = 1, nsmooth
+    do ismooth = 1, nsmooth
       ! Move faces to centroids
-      DO if0 = 1, grid%nface(igrid)
-        CALL centroid(grid,if0,long,lat,igrid)
+      do if0 = 1, grid%nface(igrid)
+        call grid%centroid(if0,long,lat,igrid)
         grid%flong(if0,igrid) = long
         grid%flat(if0,igrid) = lat
-      ENDDO
+      enddo
       ! Move vertices to centroids
-      DO iv0 = 1, grid%nvert(igrid)
-        CALL dual_centroid(grid,iv0,long,lat,igrid)
+      do iv0 = 1, grid%nvert(igrid)
+        call grid%dual_centroid(iv0,long,lat,igrid)
         grid%vlong(iv0,igrid) = long
         grid%vlat(iv0,igrid) = lat
-      ENDDO
-    ENDDO
+      enddo
+    enddo
 
-  ELSE
+  else
 
-    PRINT *,'flavour = ',flavour,'  not recognized. Please pick another.'
-    STOP
+    call message('flavour not recognized. Please pick another.', fatal)
 
-  ENDIF
+  endif
 
 ! Tabulate areas
-  DO if1 = 1, grid%nface(igrid)
+  do if1 = 1, grid%nface(igrid)
     long = grid%flong(if1,igrid)
     lat = grid%flat(if1,igrid)
-    CALL ll2xyz(long,lat,x0,y0,z0)
+    call ll2xyz(long,lat,x0,y0,z0)
 !   Compute face area
     aface = 0.0_kind_real
-    DO i = 1, 4
+    do i = 1, 4
       ie1 = grid%eoff(if1,i,igrid)
       ixv = grid%vofe(ie1,1,igrid)
       long = grid%vlong(ixv,igrid)
       lat = grid%vlat(ixv,igrid)
-      CALL ll2xyz(long,lat,x1,y1,z1)
+      call ll2xyz(long,lat,x1,y1,z1)
       ixv = grid%vofe(ie1,2,igrid)
       long = grid%vlong(ixv,igrid)
       lat = grid%vlat(ixv,igrid)
-      CALL ll2xyz(long,lat,x2,y2,z2)
-      CALL starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,atri)
+      call ll2xyz(long,lat,x2,y2,z2)
+      call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,atri)
       aface = aface + atri
-    ENDDO
+    enddo
     grid%farea(if1,igrid) = aface
-  ENDDO
+  enddo
   amin = MINVAL(grid%farea(1:grid%nface(igrid),igrid))
   amax = MAXVAL(grid%farea(1:grid%nface(igrid),igrid))
-  PRINT *,'Grid ',igrid,' min and max face area ',amin,amax,' ratio ',amin/amax
+  write(gridmessage,*) 'Grid ',igrid,' min and max face area ',amin,amax,' ratio ',amin/amax
+  call message(gridmessage, trace)
 
 ! Tabulate lengths of edges and distances between face centres
 ! across each edge
@@ -539,17 +561,17 @@ DO igrid = 1, grid%ngrids
   dmn=5.0_kind_real
   dmx=0.0_kind_real
   dav=0.0_kind_real
-  DO ie0 = 1, grid%nedge(igrid)
+  do ie0 = 1, grid%nedge(igrid)
 !   Vertices at ends of this edge
     iv1 = grid%vofe(ie0,1,igrid)
     iv2 = grid%vofe(ie0,2,igrid)
     long = grid%vlong(iv1,igrid)
     lat = grid%vlat(iv1,igrid)
-    CALL ll2xyz(long,lat,x1,y1,z1)
+    call ll2xyz(long,lat,x1,y1,z1)
     long = grid%vlong(iv2,igrid)
     lat = grid%vlat(iv2,igrid)
-    CALL ll2xyz(long,lat,x2,y2,z2)
-    CALL spdist(x1,y1,z1,x2,y2,z2,s)
+    call ll2xyz(long,lat,x2,y2,z2)
+    call spdist(x1,y1,z1,x2,y2,z2,s)
     grid%ldist(ie0,igrid) = s
     lmn = MIN(lmn,grid%ldist(ie0,igrid))
     lmx = MIN(lmx,grid%ldist(ie0,igrid))
@@ -558,37 +580,37 @@ DO igrid = 1, grid%ngrids
     if2 = grid%fnxte(ie0,2,igrid)
     long = grid%flong(if1,igrid)
     lat = grid%flat(if1,igrid)
-    CALL ll2xyz(long,lat,x1,y1,z1)
+    call ll2xyz(long,lat,x1,y1,z1)
     long = grid%flong(if2,igrid)
     lat = grid%flat(if2,igrid)
-    CALL ll2xyz(long,lat,x2,y2,z2)
-    CALL spdist(x1,y1,z1,x2,y2,z2,s)
+    call ll2xyz(long,lat,x2,y2,z2)
+    call spdist(x1,y1,z1,x2,y2,z2,s)
     grid%ddist(ie0,igrid) = s
     dmn = MIN(dmn,grid%ddist(ie0,igrid))
     dmx = MIN(dmx,grid%ddist(ie0,igrid))
     dav = dav + grid%ddist(ie0,igrid)/grid%nedge(igrid)
-  ENDDO
+  enddo
 
-ENDDO
+enddo
 
 
 ! Sort FNXTF into anticlockwise order on each grid
 ! and sort EOFF to correspond to FNXTF
 ! Also sort fofv into anticlockwise order
-DO igrid = 1, grid%ngrids
+do igrid = 1, grid%ngrids
 
-  DO if0 = 1, grid%nface(igrid)
+  do if0 = 1, grid%nface(igrid)
 
 !   Coordinates of face if0
     long = grid%flong(if0,igrid)
     lat = grid%flat(if0,igrid)
-    CALL ll2xyz(long,lat,x0,y0,z0)
-    DO ix1 = 1, 2
+    call ll2xyz(long,lat,x0,y0,z0)
+    do ix1 = 1, 2
 !     Coordinates of IX1'th neighbour
       if1 = grid%fnxtf(if0,ix1,igrid)
       long = grid%flong(if1,igrid)
       lat = grid%flat(if1,igrid)
-      CALL ll2xyz(long,lat,x1,y1,z1)
+      call ll2xyz(long,lat,x1,y1,z1)
       d1x = x1 - x0
       d1y = y1 - y0
       d1z = z1 - z0
@@ -596,12 +618,12 @@ DO igrid = 1, grid%ngrids
       thetamin = pi
       ixmin = 0
       ifmin = 0
-      DO ix2 = ix1 + 1, 4
+      do ix2 = ix1 + 1, 4
 !       Coordinates of IX2'th neighbour
         if2 = grid%fnxtf(if0,ix2,igrid)
         long = grid%flong(if2,igrid)
         lat = grid%flat(if2,igrid)
-        CALL ll2xyz(long,lat,x2,y2,z2)
+        call ll2xyz(long,lat,x2,y2,z2)
         d2x=x2 - x0
         d2y=y2 - y0
         d2z=z2 - z0
@@ -610,47 +632,47 @@ DO igrid = 1, grid%ngrids
            + y0*(d1z*d2x - d1x*d2z) &
            + z0*(d1x*d2y - d1y*d2x)
         theta = ATAN2(sn,cs)
-        IF ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
+        if ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
           ixmin = ix2
           ifmin = if2
           thetamin = theta
-        ENDIF
-      ENDDO
+        endif
+      enddo
 !     The face in position IXMIN belongs in position IX1+1 so swap them
       if3 = grid%fnxtf(if0,ix1+1,igrid)
       grid%fnxtf(if0,ix1+1,igrid) = ifmin
       grid%fnxtf(if0,ixmin,igrid) = if3
-    ENDDO
+    enddo
 
-    DO ix1 = 1, 4
+    do ix1 = 1, 4
       if1 = grid%fnxtf(if0,ix1,igrid)
       ix2 = ix1 - 1
       lfound = .FALSE.
-      DO WHILE (.NOT. lfound)
+      do WHILE (.NOT. lfound)
          ix2 = ix2 + 1
          ie1 = grid%eoff(if0,ix2,igrid)
          if21 = grid%fnxte(ie1,1,igrid)
          if22 = grid%fnxte(ie1,2,igrid)
-         IF ((if21 + if22) == (if0 + if1)) lfound = .TRUE.
-      ENDDO
+         if ((if21 + if22) == (if0 + if1)) lfound = .TRUE.
+      enddo
 !     Edge IE2 corresponds to face IF1
       grid%eoff(if0,ix2,igrid) = grid%eoff(if0,ix1,igrid)
       grid%eoff(if0,ix1,igrid) = ie1
-    ENDDO
+    enddo
 
-  ENDDO
+  enddo
 
-  DO iv0 = 1, grid%nvert(igrid)
+  do iv0 = 1, grid%nvert(igrid)
 !   Coordinates of vertex iv0
     long = grid%vlong(iv0,igrid)
     lat = grid%vlat(iv0,igrid)
-    CALL ll2xyz(long,lat,x0,y0,z0)
-    DO ix1 = 1, grid%neofv(iv0,igrid) - 2
+    call ll2xyz(long,lat,x0,y0,z0)
+    do ix1 = 1, grid%neofv(iv0,igrid) - 2
 !     Coordinates of IX1'th face
       if1 = grid%fofv(iv0,ix1,igrid)
       long = grid%flong(if1,igrid)
       lat = grid%flat(if1,igrid)
-      CALL ll2xyz(long,lat,x1,y1,z1)
+      call ll2xyz(long,lat,x1,y1,z1)
       d1x = x1 - x0
       d1y = y1 - y0
       d1z = z1 - z0
@@ -658,12 +680,12 @@ DO igrid = 1, grid%ngrids
       thetamin = pi
       ixmin = 0
       ifmin = 0
-      DO ix2 = ix1 + 1, grid%neofv(iv0,igrid)
+      do ix2 = ix1 + 1, grid%neofv(iv0,igrid)
 !       Coordinates of IX2'th neighbour
         if2 = grid%fofv(iv0,ix2,igrid)
         long = grid%flong(if2,igrid)
         lat = grid%flat(if2,igrid)
-        CALL ll2xyz(long,lat,x2,y2,z2)
+        call ll2xyz(long,lat,x2,y2,z2)
         d2x=x2 - x0
         d2y=y2 - y0
         d2z=z2 - z0
@@ -672,29 +694,29 @@ DO igrid = 1, grid%ngrids
            + y0*(d1z*d2x - d1x*d2z) &
            + z0*(d1x*d2y - d1y*d2x)
         theta = ATAN2(sn,cs)
-        IF ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
+        if ((theta < thetamin) .AND. (theta > 0.0_kind_real)) THEN
           ixmin = ix2
           ifmin = if2
           thetamin = theta
-        ENDIF
-      ENDDO
+        endif
+      enddo
 !     The face in position IXMIN belongs in position IX1+1 so swap them
       if3 = grid%fofv(iv0,ix1+1,igrid)
       grid%fofv(iv0,ix1+1,igrid) = ifmin
       grid%fofv(iv0,ixmin,igrid) = if3
-    ENDDO
-  ENDDO
+    enddo
+  enddo
 
-ENDDO
+enddo
 
 !
 ! Order VOFF so that the k'th vertex is between the
 ! k'th and (k+1)'th edges in EOFF
-DO igrid = 1, grid%ngrids
-  DO if0 = 1, grid%nface(igrid)
-    DO ix1 = 1, grid%neoff(if0,igrid)
+do igrid = 1, grid%ngrids
+  do if0 = 1, grid%nface(igrid)
+    do ix1 = 1, grid%neoff(if0,igrid)
       ix2 = ix1 + 1
-      IF (ix2 > grid%neoff(if0,igrid)) ix2 = 1
+      if (ix2 > grid%neoff(if0,igrid)) ix2 = 1
       ie1 = grid%eoff(if0,ix1,igrid)
       ie2 = grid%eoff(if0,ix2,igrid)
       ! Find the common vertex of IE1 and IE2
@@ -702,32 +724,31 @@ DO igrid = 1, grid%ngrids
       iv12 = grid%vofe(ie1,2,igrid)
       iv21 = grid%vofe(ie2,1,igrid)
       iv22 = grid%vofe(ie2,2,igrid)
-      IF ((iv11 == iv21) .OR. (iv11 == iv22)) THEN
+      if ((iv11 == iv21) .OR. (iv11 == iv22)) THEN
         iv0 = iv11
-      ELSEIF ((iv12 == iv21) .OR. (iv12 == iv22)) THEN
+      elseif ((iv12 == iv21) .OR. (iv12 == iv22)) THEN
         iv0 = iv12
-      ELSE
-        PRINT *,'Common vertex not found'
-        STOP
-      ENDIF
+      else
+        call message('Common vertex not found',fatal)
+      endif
       grid%voff(if0,ix1,igrid) = iv0
-    ENDDO
-  ENDDO
-ENDDO
+    enddo
+  enddo
+enddo
 
 
 ! Sort VOFE so that VOFE(1) -> VOFE(2) (tangent vector)
 ! is 90 degrees anticlockwise of FNXTE(1) -> FNXTE(2) (normal vector)
-DO igrid = 1, grid%ngrids
-  DO ie0 = 1, grid%nedge(igrid)
+do igrid = 1, grid%ngrids
+  do ie0 = 1, grid%nedge(igrid)
     if1 = grid%fnxte(ie0,1,igrid)
     if2 = grid%fnxte(ie0,2,igrid)
     long = grid%flong(if1,igrid)
     lat = grid%flat(if1,igrid)
-    CALL ll2xyz(long,lat,x0,y0,z0)
+    call ll2xyz(long,lat,x0,y0,z0)
     long = grid%flong(if2,igrid)
     lat = grid%flat(if2,igrid)
-    CALL ll2xyz(long,lat,x1,y1,z1)
+    call ll2xyz(long,lat,x1,y1,z1)
     d1x = x1 - x0
     d1y = y1 - y0
     d1z = z1 - z0
@@ -735,23 +756,23 @@ DO igrid = 1, grid%ngrids
     iv2 = grid%vofe(ie0,2,igrid)
     long = grid%vlong(iv1,igrid)
     lat = grid%vlat(iv1,igrid)
-    CALL ll2xyz(long,lat,x0,y0,z0)
+    call ll2xyz(long,lat,x0,y0,z0)
     long = grid%vlong(iv2,igrid)
     lat = grid%vlat(iv2,igrid)
-    CALL ll2xyz(long,lat,x1,y1,z1)
+    call ll2xyz(long,lat,x1,y1,z1)
     d2x = x1 - x0
     d2y = y1 - y0
     d2z = z1 - z0
     sn = x0*(d1y*d2z - d1z*d2y) &
        + y0*(d1z*d2x - d1x*d2z) &
        + z0*(d1x*d2y - d1y*d2x)
-    IF (sn < 0.0_kind_real) THEN
+    if (sn < 0.0_kind_real) THEN
       ! Swap the two vertices
       grid%vofe(ie0,1,igrid) = iv2
       grid%vofe(ie0,2,igrid) = iv1
-    ENDIF
-  ENDDO
-ENDDO
+    endif
+  enddo
+enddo
 
 grid%nefmx = MAXVAL(grid%neoff)
 grid%nevmx = MAXVAL(grid%neofv)

@@ -1,7 +1,6 @@
 module femps_utils_mod
 
 use femps_kinds_mod
-use femps_grid_mod
 
 implicit none
 
@@ -16,6 +15,8 @@ interface xyz2ll
    module procedure xyz2ll_sca
    module procedure xyz2ll_vec
 end interface
+
+integer, parameter :: fatal = 1, trace = 2
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -185,6 +186,7 @@ integer, intent(in)    :: index
 integer, intent(in)    :: entry
 
 integer :: i
+character(len=2056) :: errormessage
 
 ! Add an entry to a table
 ! -----------------------
@@ -193,125 +195,18 @@ i=0
 100 continue
 i=i+1
 if (i.gt.dim2) then
-  print *,'**********'
-  print *,'table full'
-  print *,'**********'
-  print *,index,entry,dim1,dim2
-  print *,tab(index,:)
-  stop
+  call message('**********')
+  call message('table full')
+  call message('**********')
+  write(errormessage,*) index,entry,dim1,dim2
+  call message(errormessage)
+  write(errormessage,*) tab(index,:)
+  call message(errormessage,fatal)
 endif
 if (tab(index,i).ne.0) goto 100
 tab(index,i)=entry
 
 end subroutine addtab
-
-! --------------------------------------------------------------------------------------------------
-
-subroutine centroid(grid,if0,long,lat,igrid)
-
-implicit none
-type(fempsgrid),      intent(in)  :: grid
-integer,              intent(in)  :: if0
-integer,              intent(in)  :: igrid
-real(kind=kind_real), intent(out) :: long
-real(kind=kind_real), intent(out) :: lat
-
-integer :: ixe, ie1, iv1, iv2
-real(kind=kind_real) :: long1, lat1, x0, y0, z0, x1, y1, z1, x2, y2, z2, &
-                        xc, yc, zc, a, aby3, mag
-
-! Find the centroid of cell if0 on grid igrid
-! -------------------------------------------
-
-! Coordinates of `centre' of face (i.e. dual vertex)
-long1 = grid%flong(if0,igrid)
-lat1 = grid%flat(if0,igrid)
-call ll2xyz(long1,lat1,x0,y0,z0)
-
-! Loop over edges in turn and calculate area of triangle
-! formed by the edge and the centre of the face
-! Hence find area of face and centroid
-xc = 0.0_kind_real
-yc = 0.0_kind_real
-zc = 0.0_kind_real
-do ixe = 1, grid%neoff(if0,igrid)
-  ie1 = grid%eoff(if0,ixe,igrid)
-  iv1 = grid%vofe(ie1,1,igrid)
-  iv2 = grid%vofe(ie1,2,igrid)
-  long1 = grid%vlong(iv1,igrid)
-  lat1 = grid%vlat(iv1,igrid)
-  call ll2xyz(long1,lat1,x1,y1,z1)
-  long1 = grid%vlong(iv2,igrid)
-  lat1 = grid%vlat(iv2,igrid)
-  call ll2xyz(long1,lat1,x2,y2,z2)
-  call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,a)
-  aby3 = a/3.0_kind_real
-  xc = xc + (x0 + x1 + x2)*aby3
-  yc = yc + (y0 + y1 + y2)*aby3
-  zc = zc + (z0 + z1 + z2)*aby3
-enddo
-mag = sqrt(xc*xc + yc*yc + zc*zc)
-xc = xc/mag
-yc = yc/mag
-zc = zc/mag
-call xyz2ll(xc,yc,zc,long,lat)
-
-end subroutine centroid
-
-! --------------------------------------------------------------------------------------------------
-
-subroutine dual_centroid(grid,iv0,long,lat,igrid)
-
-implicit none
-type(fempsgrid),      intent(in)  :: grid
-integer,              intent(in)  :: iv0
-integer,              intent(in)  :: igrid
-real(kind=kind_real), intent(out) :: long
-real(kind=kind_real), intent(out) :: lat
-
-integer :: ixe, ie1, iv1, iv2
-real(kind=kind_real) :: long1, lat1, x0, y0, z0, x1, y1, z1, x2, y2, z2, &
-                        xc, yc, zc, a, aby3, mag
-
-! Find the centroid of dual cell iv0 on grid igrid
-! ------------------------------------------------
-
-! Coordinates of `centre' of dual cell (i.e. vertex)
-long1 = grid%vlong(iv0,igrid)
-lat1 = grid%vlat(iv0,igrid)
-call ll2xyz(long1,lat1,x0,y0,z0)
-
-! Loop over edges in turn and calculate area of triangle
-! formed by the edge and the centre of the dual cell
-! Hence find area of dual cell and centroid
-xc = 0.0_kind_real
-yc = 0.0_kind_real
-zc = 0.0_kind_real
-do ixe = 1, grid%neofv(iv0,igrid)
-  ie1 = grid%eofv(iv0,ixe,igrid)
-  iv1 = grid%fnxte(ie1,1,igrid)
-  iv2 = grid%fnxte(ie1,2,igrid)
-  long1 = grid%flong(iv1,igrid)
-  lat1 = grid%flat(iv1,igrid)
-  call ll2xyz(long1,lat1,x1,y1,z1)
-  long1 = grid%flong(iv2,igrid)
-  lat1 = grid%flat(iv2,igrid)
-  call ll2xyz(long1,lat1,x2,y2,z2)
-  call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,a)
-  aby3 = a/3.0_kind_real
-  xc = xc + (x0 + x1 + x2)*aby3
-  yc = yc + (y0 + y1 + y2)*aby3
-  zc = zc + (z0 + z1 + z2)*aby3
-enddo
-
-mag = sqrt(xc*xc + yc*yc + zc*zc)
-xc = xc/mag
-yc = yc/mag
-zc = zc/mag
-
-call xyz2ll(xc,yc,zc,long,lat)
-
-end subroutine dual_centroid
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -323,6 +218,8 @@ integer, intent(in)    :: nl
 integer, intent(inout) :: list(nl)
 integer, intent(out)   :: ix
 
+character(len=255) :: errormessage
+
 ! Find the index ix to the entry i in the input list.
 ! if i is not already in the list then it is added into
 ! the first empty (i.e. zero) position.
@@ -330,10 +227,11 @@ integer, intent(out)   :: ix
 ix = 1
 do while ((list(ix) .ne. i) .and. (list(ix) .ne. 0))
   if (ix == nl) then
-    print *,'search past end of list in subroutine findinlist.'
-    print *,'i = ',i
-    print *,'list = ',list
-    stop
+    call message('search past end of list in subroutine findinlist.')
+    write(errormessage,*) 'i = ',i
+    call message(errormessage)
+    write(errormessage,*) 'list = ',list
+    call message(errormessage,fatal)
   endif
   ix = ix + 1
 enddo
@@ -367,6 +265,64 @@ c = sqrt(l3sq)
 area = 0.25_kind_real*sqrt((a + b + c)*(b + c - a)*(c + a - b)*(a + b - c))
 
 end subroutine triangle
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine nccheck(status,iam)
+
+use netcdf
+
+implicit none
+integer,                    intent (in) :: status
+character(len=*), optional, intent (in) :: iam
+
+character(len=1024) :: error_descr
+
+if(status /= nf90_noerr) then
+
+  error_descr = "NetCDF error, aborting ... "
+
+  if (present(iam)) then
+    error_descr = trim(error_descr)//", "//trim(iam)
+  endif
+
+  error_descr = trim(error_descr)//". Error code: "//trim(nf90_strerror(status))
+
+  call message('NCCheck'//trim(error_descr),fatal)
+
+end if
+
+end subroutine nccheck
+
+! ------------------------------------------------------------------------------
+
+subroutine message(note,code)
+
+implicit none
+character(len=*),  intent(in) :: note
+integer, optional, intent(in) :: code
+
+character(len=2056) :: noteprint
+
+noteprint = note
+
+if (present(code)) then
+  if (code == fatal) then
+    noteprint = 'FATAL: '//trim(note)
+  elseif (code == trace) then
+      noteprint = 'TRACE: '//trim(note)
+  endif
+endif
+
+print*, trim(noteprint)
+
+if (present(code)) then
+  if (code == fatal) then
+    stop 1
+  endif
+endif
+
+end subroutine message
 
 ! ------------------------------------------------------------------------------
 

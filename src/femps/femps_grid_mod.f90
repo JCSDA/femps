@@ -1,41 +1,40 @@
 module femps_grid_mod
 
 use netcdf
-
 use femps_kinds_mod
+use femps_utils_mod
 
 implicit none
 private
 public fempsgrid
 
-! Type to hold all the grid information
-! -------------------------------------
+! Class containing the grid
+! -------------------------
 type fempsgrid
 
   character(len=2) :: gtype  ! cs (cubed-sphere), ih (icosahedral hexagons), di (diamonds)
 
+  !Dimension of the grid(s)
   integer :: ngrids      ! Number of grids in multigrid hierarchy
+  integer :: nfacex      ! Number of faces on highest resolution grid
+  integer :: nedgex      ! Number of edges on highest resolution each grid
+  integer :: nvertx      ! Number of vertices on highest resolution edge
 
-  integer :: nfacex      ! Number of faces on each grid
-  integer :: nedgex      ! Number of edges on each grid
-  integer :: nvertx      ! Number of vertices on each edge
-
+  !Dimensions of each grid in hierarchy
   integer, allocatable, dimension(:) :: nface ! faces on each grid
   integer, allocatable, dimension(:) :: nedge ! edges on each grid
   integer, allocatable, dimension(:) :: nvert ! vertices on each edge
 
-  integer :: n0
+  integer :: n0 !Used for scaling between grids in hierarchy
 
   integer :: nefmx, nevmx                       ! maximum in neoff and neofv
   integer, allocatable, dimension(:,:) :: neoff ! number of edges and vertices of each face on each grid
   integer, allocatable, dimension(:,:) :: neofv ! number of edges of each vertex on each grid
 
-  ! Dimensions for the following arrays
-  ! -----------------------------------
-  integer, private :: dimfnxtf, dimeoff, dimvoff, dimfnxte, dimvofe, dimfofv, dimeofv
-
   ! Connectivity
   ! ------------
+  integer, private :: dimfnxtf, dimeoff, dimvoff, dimfnxte, dimvofe, dimfofv, dimeofv
+
   integer, allocatable, dimension(:,:,:) :: fnxtf   ! faces next to each face on each grid
   integer, allocatable, dimension(:,:,:) :: eoff    ! edges of each face on each grid
   integer, allocatable, dimension(:,:,:) :: voff    ! vertices of each face on each grid
@@ -59,6 +58,8 @@ type fempsgrid
    procedure, public :: setup
    procedure, public :: delete
    procedure, public :: writegrid
+   procedure, public :: centroid
+   procedure, public :: dual_centroid
 
 end type fempsgrid
 
@@ -124,13 +125,11 @@ elseif (self%gtype=='ih') then
 
 elseif (self%gtype=='di') then
 
-  print*, "Diamong grid cell not implemented"
-  stop
+  call message('Diamond grid cell not implemented here', fatal)
 
 else
 
-  print*, "Grid type should be cs (cubed-sphere), ih (icosahedral hexagons) or di (diamonds)"
-  stop
+  call message('Grid type should be cs (cubed-sphere), ih (icosahedral hexagons) or di (diamonds)', fatal)
 
 endif
 
@@ -280,33 +279,111 @@ end subroutine writegrid
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine nccheck(status,iam)
-
-use netcdf
+subroutine centroid(self,if0,long,lat,igrid)
 
 implicit none
-integer,                    intent (in) :: status
-character(len=*), optional, intent (in) :: iam
+class(fempsgrid),     intent(in)  :: self
+integer,              intent(in)  :: if0
+integer,              intent(in)  :: igrid
+real(kind=kind_real), intent(out) :: long
+real(kind=kind_real), intent(out) :: lat
 
-character(len=1024) :: error_descr
+integer :: ixe, ie1, iv1, iv2
+real(kind=kind_real) :: long1, lat1, x0, y0, z0, x1, y1, z1, x2, y2, z2, &
+                        xc, yc, zc, a, aby3, mag
 
-if(status /= nf90_noerr) then
+! Find the centroid of cell if0 on grid igrid
+! -------------------------------------------
 
-  error_descr = "NetCDF error, aborting ... "
+! Coordinates of `centre' of face (i.e. dual vertex)
+long1 = self%flong(if0,igrid)
+lat1 = self%flat(if0,igrid)
+call ll2xyz(long1,lat1,x0,y0,z0)
 
-  if (present(iam)) then
-    error_descr = trim(error_descr)//", "//trim(iam)
-  endif
+! Loop over edges in turn and calculate area of triangle
+! formed by the edge and the centre of the face
+! Hence find area of face and centroid
+xc = 0.0_kind_real
+yc = 0.0_kind_real
+zc = 0.0_kind_real
+do ixe = 1, self%neoff(if0,igrid)
+  ie1 = self%eoff(if0,ixe,igrid)
+  iv1 = self%vofe(ie1,1,igrid)
+  iv2 = self%vofe(ie1,2,igrid)
+  long1 = self%vlong(iv1,igrid)
+  lat1 = self%vlat(iv1,igrid)
+  call ll2xyz(long1,lat1,x1,y1,z1)
+  long1 = self%vlong(iv2,igrid)
+  lat1 = self%vlat(iv2,igrid)
+  call ll2xyz(long1,lat1,x2,y2,z2)
+  call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,a)
+  aby3 = a/3.0_kind_real
+  xc = xc + (x0 + x1 + x2)*aby3
+  yc = yc + (y0 + y1 + y2)*aby3
+  zc = zc + (z0 + z1 + z2)*aby3
+enddo
+mag = sqrt(xc*xc + yc*yc + zc*zc)
+xc = xc/mag
+yc = yc/mag
+zc = zc/mag
+call xyz2ll(xc,yc,zc,long,lat)
 
-  error_descr = trim(error_descr)//". Error code: "//trim(nf90_strerror(status))
+end subroutine centroid
 
-  print*, "Aborting: ", trim(error_descr)
+! --------------------------------------------------------------------------------------------------
 
-  call abort()
+subroutine dual_centroid(self,iv0,long,lat,igrid)
 
-end if
+implicit none
+class(fempsgrid),     intent(in)  :: self
+integer,              intent(in)  :: iv0
+integer,              intent(in)  :: igrid
+real(kind=kind_real), intent(out) :: long
+real(kind=kind_real), intent(out) :: lat
 
-end subroutine nccheck
+integer :: ixe, ie1, iv1, iv2
+real(kind=kind_real) :: long1, lat1, x0, y0, z0, x1, y1, z1, x2, y2, z2, &
+                        xc, yc, zc, a, aby3, mag
+
+! Find the centroid of dual cell iv0 on grid igrid
+! ------------------------------------------------
+
+! Coordinates of `centre' of dual cell (i.e. vertex)
+long1 = self%vlong(iv0,igrid)
+lat1 = self%vlat(iv0,igrid)
+call ll2xyz(long1,lat1,x0,y0,z0)
+
+! Loop over edges in turn and calculate area of triangle
+! formed by the edge and the centre of the dual cell
+! Hence find area of dual cell and centroid
+xc = 0.0_kind_real
+yc = 0.0_kind_real
+zc = 0.0_kind_real
+do ixe = 1, self%neofv(iv0,igrid)
+  ie1 = self%eofv(iv0,ixe,igrid)
+  iv1 = self%fnxte(ie1,1,igrid)
+  iv2 = self%fnxte(ie1,2,igrid)
+  long1 = self%flong(iv1,igrid)
+  lat1 = self%flat(iv1,igrid)
+  call ll2xyz(long1,lat1,x1,y1,z1)
+  long1 = self%flong(iv2,igrid)
+  lat1 = self%flat(iv2,igrid)
+  call ll2xyz(long1,lat1,x2,y2,z2)
+  call starea2(x0,y0,z0,x1,y1,z1,x2,y2,z2,a)
+  aby3 = a/3.0_kind_real
+  xc = xc + (x0 + x1 + x2)*aby3
+  yc = yc + (y0 + y1 + y2)*aby3
+  zc = zc + (z0 + z1 + z2)*aby3
+enddo
+
+mag = sqrt(xc*xc + yc*yc + zc*zc)
+xc = xc/mag
+yc = yc/mag
+zc = zc/mag
+
+call xyz2ll(xc,yc,zc,long,lat)
+
+end subroutine dual_centroid
 
 ! --------------------------------------------------------------------------------------------------
 

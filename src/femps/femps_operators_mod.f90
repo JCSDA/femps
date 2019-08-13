@@ -321,37 +321,39 @@ class(fempsoprs), intent(inout) :: self
 type(fempsgrid),  intent(inout) :: grid
 
 integer :: igrid
+character(len=255) :: infomessage
 
 ! Construct some basic geometrical information
 call buildgeom(self,grid)
-print *,'Done buildgeom'
+call message('Done buildgeom',trace)
 
 ! Information is assumed to be in a certain order in arrays
 ! defining connectivity. this may already hold for the output
 ! of the grid generator, but check and correct if necessary.
 call ordering(self,grid)
-print *,'Done ordering'
+call message('Done ordering',trace)
 
 ! Loop over hierarchy of grids
 do igrid = 1, grid%ngrids
 
-  print *,' '
-  print *,'Grid ',igrid
+  call message(' ',trace)
+  write(infomessage,*) 'Grid ',igrid
+  call message(infomessage,trace)
 
   ! Build compound elements on grid igrid
   call buildcomp(self,grid,igrid)
-  print *,'Done buildcomp'
+  call message('Done buildcomp',trace)
 
   ! Build matrix operators on grid igrid
   call buildmat(self,grid,igrid)
-  print *,'Done buildmat'
+  call message('Done buildmat',trace)
 
 enddo
-print *,' '
+call message(' ',trace)
 
 ! Build restriction operator
 call buildinj(self,grid)
-print *,'Multigrid restriction operator built'
+call message('Multigrid restriction operator built',trace)
 
 end subroutine build
 
@@ -374,6 +376,8 @@ integer :: igrid, if0, ne, ix1, if1, ixmin, ifmin, ix2, if2, &
 real(kind=kind_real) :: pi, long, lat, x0(3), x1(3), d1x, d1y, d1z, thetamin, &
                         x2(3), d2x, d2y, d2z, cs, sn, theta
 logical :: lfound
+
+character(len=255) :: errormessage
 
 ! Note: this method updates:
 ! grid%fnxtf
@@ -482,8 +486,7 @@ do igrid = 1, grid%ngrids
       elseif ((iv12 == iv21) .or. (iv12 == iv22)) then
         iv0 = iv12
       else
-        print *,'common vertex not found'
-        stop
+        call message('common vertex not found',fatal)
       endif
       grid%voff(if0,ix1,igrid) = iv0
     enddo
@@ -564,9 +567,9 @@ do igrid = 1, grid%ngrids
       elseif ((if12 == if21) .or. (if12 == if22)) then
         if0 = if12
       else
-        print *,'common face not found'
-        print *,'grid ',igrid,' vertex ',iv0
-        stop
+        write(errormessage,*) 'grid ',igrid,' vertex ',iv0
+        call message('common face not found')
+        call message(errormessage,fatal)
       endif
       grid%fofv(iv0,ix1,igrid) = if0
     enddo
@@ -788,23 +791,23 @@ integer,          intent(in)    :: igrid
 
 ! Compound P0 elements on primal cells (space Vp)
 call buildvp(self,grid,igrid)
-print *,'  Done buildvp'
+call message('  Done buildvp',trace)
 
 ! Compound RT0 elements on primal cells (space Sp)
 call buildsp(self,grid,igrid)
-print *,'  Done buildsp'
+call message('  Done buildsp',trace)
 
 ! Compound P1 elements on primal cells (space Ep)
 call buildep(self,grid,igrid)
-print *,'  Done buildep'
+call message('  Done buildep',trace)
 
 ! Compound P0 elements on dual cells (space Vd)
 call buildvd(self,grid,igrid)
-print *,'  Done buildvd'
+call message('  Done buildvd',trace)
 
 ! Compound N0 elements on dual cells (space Sd)
 call buildsd(self,grid,igrid)
-print *,'  Done buildsd'
+call message('  Done buildsd',trace)
 
 end subroutine buildcomp
 
@@ -823,28 +826,28 @@ integer,         intent(in) :: igrid
 
 ! Mass matrix L
 call buildL(self,grid,igrid)
-print *,'  Done buildL'
+call message('  Done buildL',trace)
 
 ! Mass matrix M
 call buildM(self,grid,igrid)
-print *,'  Done buildM'
+call message('  Done buildM',trace)
 
 ! Vp to Ep transfer operator R
 call buildR(self,grid,igrid)
-print *,'  Done buildR'
+call message('  Done buildR',trace)
 
 ! W operator for constructing perp of vectors
 ! (maps E_p tp E_p)
 call buildW(self,grid,igrid)
-print *,'  Done buildW'
+call message('  Done buildW',trace)
 
 ! Vd to Ep transfer operator J
 call buildJ(self,grid,igrid)
-print *,'  Done buildJ'
+call message('  Done buildJ',trace)
 
 ! Sd to Sp transfer operator H
 call buildH(self,grid,igrid)
-print *,'  Done buildH'
+call message('  Done buildH',trace)
 
 end subroutine buildmat
 
@@ -2358,6 +2361,7 @@ type(fempsgrid),  intent(in)    :: grid
 integer :: if0, if1, igrid, igridp, nf, ix, ixp, iv1, iv2, &
            n2, n, n2p, np, i, j, &
            t1, s1, s2, s3, s4, p
+character(len=255) :: errormessage
 
 ! if ((grid%nedgex == 3*(grid%nfacex - 2)) .AND. (grid%nefmx == 6) .AND. (grid%nevmx == 3)) THEN
 if (grid%gtype == 'ih') THEN
@@ -2501,15 +2505,10 @@ elseif (grid%gtype == 'di') THEN
 
 else
 
-  print *,' '
-  print *,'**********'
-  print *,'grid%gtype = ', grid%gtype
-  print *,'I do not recognize this grid.'
-  print *,'Please programme me to build the multigrid restriction'
-  print *,'operator for this grid. Thank you.'
-  print *,'**********'
-  print *,' '
-  stop
+  write(errormessage,*) 'grid%gtype = ', grid%gtype
+  call message(errormessage)
+  call message('This grid is not recognized. Please programme the &
+                multigrid restriction operator for this grid.', fatal)
 
 endif
 
