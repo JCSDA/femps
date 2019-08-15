@@ -101,6 +101,7 @@ type fempsoprs
    procedure, public :: setup
    procedure, public :: pdelete
    procedure, public :: delete
+   procedure, public :: writeoperators
    procedure, public :: build
 
    ! Internal methods
@@ -311,6 +312,166 @@ if(allocated(self%cvd       )) deallocate(self%cvd       )
 if(allocated(self%csd       )) deallocate(self%csd       )
 
 end subroutine delete
+
+! --------------------------------------------------------------------------------------------------
+
+subroutine writeoperators(self,filename)
+
+implicit none
+class(fempsoprs), intent(in) :: self
+character(len=*), intent(in) :: filename
+
+integer :: ncid, vc, varid(1000)
+integer :: nvertx_dimid, ngrids_dimid, nfacex_dimid, nvertx_dimid,   nedgex_dimid,  nefmx_dimid, &
+           nevmx_dimid,   nlsmx_dimid,  nmsmx_dimid,  njsmx_dimid,    nhsmx_dimid,  nrsmx_dimid, &
+           nrxsmx_dimid,  nwsmx_dimid,  ntsmx_dimid, nxmisx_dimid, ngridsm1_dimid, ninjmx_dimid, &
+           ncvpmx_dimid, ncspmx_dimid, ncepmx_dimid, ncvdmx_dimid,   ncsdmx_dimid,
+
+! Create file
+! -----------
+call nccheck( nf90_create( trim(filename), ior(NF90_NETCDF4, NF90_CLOBBER), ncid), "nf90_create" )
+
+! Define dimensions
+! -----------------
+call nccheck( nf90_def_dim(ncid, "nvertx"  , grid%nvertx  ,   nvertx_dimid), "nf90_def_dim nvertx"   )
+call nccheck( nf90_def_dim(ncid, "ngrids"  , grid%ngrids  ,   ngrids_dimid), "nf90_def_dim ngrids"   )
+call nccheck( nf90_def_dim(ncid, "nfacex"  , grid%nfacex  ,   nfacex_dimid), "nf90_def_dim nfacex"   )
+call nccheck( nf90_def_dim(ncid, "nvertx"  , grid%nvertx  ,   nvertx_dimid), "nf90_def_dim nvertx"   )
+call nccheck( nf90_def_dim(ncid, "nedgex"  , grid%nedgex  ,   nedgex_dimid), "nf90_def_dim nedgex"   )
+call nccheck( nf90_def_dim(ncid, "nefmx"   , grid%nefmx   ,    nefmx_dimid), "nf90_def_dim nefmx"    )
+call nccheck( nf90_def_dim(ncid, "nevmx"   , grid%nevmx   ,    nevmx_dimid), "nf90_def_dim nevmx"    )
+call nccheck( nf90_def_dim(ncid, "nlsmx"   , self%nlsmx   ,    nlsmx_dimid), "nf90_def_dim nlsmx"    )
+call nccheck( nf90_def_dim(ncid, "nmsmx"   , self%nmsmx   ,    nmsmx_dimid), "nf90_def_dim nmsmx"    )
+call nccheck( nf90_def_dim(ncid, "njsmx"   , self%njsmx   ,    njsmx_dimid), "nf90_def_dim njsmx"    )
+call nccheck( nf90_def_dim(ncid, "nhsmx"   , self%nhsmx   ,    nhsmx_dimid), "nf90_def_dim nhsmx"    )
+call nccheck( nf90_def_dim(ncid, "nrsmx"   , self%nrsmx   ,    nrsmx_dimid), "nf90_def_dim nrsmx"    )
+call nccheck( nf90_def_dim(ncid, "nrxsmx"  , self%nrxsmx  ,   nrxsmx_dimid), "nf90_def_dim nrxsmx"   )
+call nccheck( nf90_def_dim(ncid, "nwsmx"   , self%nwsmx   ,    nwsmx_dimid), "nf90_def_dim nwsmx"    )
+call nccheck( nf90_def_dim(ncid, "ntsmx"   , self%ntsmx   ,    ntsmx_dimid), "nf90_def_dim ntsmx"    )
+call nccheck( nf90_def_dim(ncid, "nxmisx"  , self%nxmisx  ,   nxmisx_dimid), "nf90_def_dim nxmisx"   )
+call nccheck( nf90_def_dim(ncid, "ngridsm1", grid%ngrids-1, ngridsm1_dimid), "nf90_def_dim ngridsm1" )
+call nccheck( nf90_def_dim(ncid, "ninjmx"  , self%ninjmx  ,   ninjmx_dimid), "nf90_def_dim ninjmx"   )
+call nccheck( nf90_def_dim(ncid, "ncvpmx"  , self%ncvpmx  ,   ncvpmx_dimid), "nf90_def_dim ncvpmx"   )
+call nccheck( nf90_def_dim(ncid, "ncspmx"  , self%ncspmx  ,   ncspmx_dimid), "nf90_def_dim ncspmx"   )
+call nccheck( nf90_def_dim(ncid, "ncepmx"  , self%ncepmx  ,   ncepmx_dimid), "nf90_def_dim ncepmx"   )
+call nccheck( nf90_def_dim(ncid, "ncvdmx"  , self%ncvdmx  ,   ncvdmx_dimid), "nf90_def_dim ncvdmx"   )
+call nccheck( nf90_def_dim(ncid, "ncsdmx"  , self%ncsdmx  ,   ncsdmx_dimid), "nf90_def_dim ncsdmx"   )
+
+! Define variables
+! ----------------
+vc = 1
+
+call nccheck( nf90_def_var(ncid, "varea",      NF90_FLOAT, (/dimid_nvertx,dimid_ngrids/), varid(vc)), "nf90_def_var varea" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "eoffin",     NF90_INT  , (/dimid_nfacex,dimid_nefmx,dimid_ngrids/), varid(vc)), "nf90_def_var eoffin" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "eofvin",     NF90_INT  , (/dimid_nvertx,dimid_nevmx,dimid_ngrids/), varid(vc)), "nf90_def_var eofvin" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nlsten",     NF90_INT  , (/dimid_nfacex,dimid_ngrids/), varid(vc)), "nf90_def_var nlsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nmsten",     NF90_INT  , (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var nmsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "njsten",     NF90_INT  , (/dimid_nvertx,dimid_ngrids/), varid(vc)), "nf90_def_var njsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nhsten",     NF90_INT  , (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var nhsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nrsten",     NF90_INT  , (/dimid_nfacex,dimid_ngrids/), varid(vc)), "nf90_def_var nrsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nrxsten",    NF90_INT  , (/dimid_nvertx,dimid_ngrids/), varid(vc)), "nf90_def_var nrxsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nwsten",     NF90_INT  , (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var nwsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ntsten",     NF90_INT  , (/dimid_nfacex,dimid_ngrids/), varid(vc)), "nf90_def_var ntsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "nxminvsten", NF90_INT  , (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var nxminvsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "lsten",      NF90_INT  , (/dimid_nfacex,dimid_nlsmx, dimid_ngrids/), varid(vc)), "nf90_def_var lsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "msten",      NF90_INT  , (/dimid_nedgex,dimid_nmsmx, dimid_ngrids/), varid(vc)), "nf90_def_var msten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "jsten",      NF90_INT  , (/dimid_nvertx,dimid_njsmx, dimid_ngrids/), varid(vc)), "nf90_def_var jsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "hsten",      NF90_INT  , (/dimid_nedgex,dimid_nhsmx, dimid_ngrids/), varid(vc)), "nf90_def_var hsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "rsten",      NF90_INT  , (/dimid_nfacex,dimid_nrsmx, dimid_ngrids/), varid(vc)), "nf90_def_var rsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "rxsten",     NF90_INT  , (/dimid_nvertx,dimid_nrxsmx,dimid_ngrids/), varid(vc)), "nf90_def_var rxsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "wsten",      NF90_INT  , (/dimid_nedgex,dimid_nwsmx, dimid_ngrids/), varid(vc)), "nf90_def_var wsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "tsten",      NF90_INT  , (/dimid_nfacex,dimid_ntsmx, dimid_ngrids/), varid(vc)), "nf90_def_var tsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "xminvsten",  NF90_INT  , (/dimid_nedgex,dimid_nxmisx,dimid_ngrids/), varid(vc)), "nf90_def_var xminvsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "jlump",      NF90_FLOAT, (/dimid_nvertx,dimid_ngrids/), varid(vc)), "nf90_def_var jlump" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "mlump",      NF90_FLOAT, (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var mlump" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "hlump",      NF90_FLOAT, (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var hlump" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "lmass",      NF90_FLOAT, (/dimid_nfacex,dimid_nlsmx, dimid_ngrids/), varid(vc)), "nf90_def_var lmass" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "mmass",      NF90_FLOAT, (/dimid_nedgex,dimid_nmsmx, dimid_ngrids/), varid(vc)), "nf90_def_var mmass" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "jstar",      NF90_FLOAT, (/dimid_nvertx,dimid_njsmx, dimid_ngrids/), varid(vc)), "nf90_def_var jstar" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "hstar",      NF90_FLOAT, (/dimid_nedgex,dimid_nhsmx, dimid_ngrids/), varid(vc)), "nf90_def_var hstar" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "rcoeff",     NF90_FLOAT, (/dimid_nfacex,dimid_nrsmx, dimid_ngrids/), varid(vc)), "nf90_def_var rcoeff" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "rxcoeff",    NF90_FLOAT, (/dimid_nvertx,dimid_nrxsmx,dimid_ngrids/), varid(vc)), "nf90_def_var rxcoeff" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "wcoeff",     NF90_FLOAT, (/dimid_nedgex,dimid_nwsmx, dimid_ngrids/), varid(vc)), "nf90_def_var wcoeff" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "xminv",      NF90_FLOAT, (/dimid_nedgex,dimid_nxmisx,dimid_ngrids/), varid(vc)), "nf90_def_var xminv" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "tcoeff",     NF90_FLOAT, (/dimid_nfacex,dimid_ntsmx, dimid_ntsmx,dimid_ngrids/), varid(vc)), "nf90_def_var tcoeff" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "elong",      NF90_FLOAT, (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var elong" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "elat",       NF90_FLOAT, (/dimid_nedgex,dimid_ngrids/), varid(vc)), "nf90_def_var elat" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ninj",       NF90_INT  , (/dimid_nfacex,dimid_ngridsm1/), varid(vc)), "nf90_def_var ninj" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "injsten",    NF90_INT  , (/dimid_nfacex,dimid_ninjmx,dimid_ngridsm1/), varid(vc)), "nf90_def_var injsten" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "injwgt",     NF90_FLOAT, (/dimid_nfacex,dimid_ninjmx,dimid_ngridsm1/), varid(vc)), "nf90_def_var injwgt" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "lapdiag",    NF90_FLOAT, (/dimid_nfacex,dimid_ngrids/), varid(vc)), "nf90_def_var lapdiag" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "underrel",   NF90_FLOAT, (/dimid_ngrids/), varid(vc)), "nf90_def_var underrel" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ncvp",       NF90_INT  , (/dimid_nfacex/), varid(vc)), "nf90_def_var ncvp" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ncsp",       NF90_INT  , (/dimid_nedgex/), varid(vc)), "nf90_def_var ncsp" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ncep",       NF90_INT  , (/dimid_nvertx/), varid(vc)), "nf90_def_var ncep" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ncvd",       NF90_INT  , (/dimid_nvertx/), varid(vc)), "nf90_def_var ncvd" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "ncsd",       NF90_INT  , (/dimid_nedgex/), varid(vc)), "nf90_def_var ncsd" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "cvp",        NF90_FLOAT, (/dimid_nfacex,dimid_ncvpmx/), varid(vc)), "nf90_def_var cvp" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "csp",        NF90_FLOAT, (/dimid_nedgex,dimid_ncspmx/), varid(vc)), "nf90_def_var csp" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "cep",        NF90_FLOAT, (/dimid_nvertx,dimid_ncepmx/), varid(vc)), "nf90_def_var cep" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "cvd",        NF90_FLOAT, (/dimid_nvertx,dimid_ncvdmx/), varid(vc)), "nf90_def_var cvd" ); vc=vc+1
+call nccheck( nf90_def_var(ncid, "csd",        NF90_FLOAT, (/dimid_nedgex,dimid_ncsdmx/), varid(vc)), "nf90_def_var csd" ); vc=vc+1
+
+! Write variables
+! ---------------
+vc = 1
+
+call nccheck( nf90_put_var( ncid, varid(vc), self%varea      ), "nf90_put_var varea"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%eoffin     ), "nf90_put_var eoffin"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%eofvin     ), "nf90_put_var eofvin"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nlsten     ), "nf90_put_var nlsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nmsten     ), "nf90_put_var nmsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%njsten     ), "nf90_put_var njsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nhsten     ), "nf90_put_var nhsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nrsten     ), "nf90_put_var nrsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nrxsten    ), "nf90_put_var nrxsten"    ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nwsten     ), "nf90_put_var nwsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ntsten     ), "nf90_put_var ntsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%nxminvsten ), "nf90_put_var nxminvsten" ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%lsten      ), "nf90_put_var lsten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%msten      ), "nf90_put_var msten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%jsten      ), "nf90_put_var jsten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%hsten      ), "nf90_put_var hsten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%rsten      ), "nf90_put_var rsten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%rxsten     ), "nf90_put_var rxsten"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%wsten      ), "nf90_put_var wsten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%tsten      ), "nf90_put_var tsten"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%xminvsten  ), "nf90_put_var xminvsten"  ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%jlump      ), "nf90_put_var jlump"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%mlump      ), "nf90_put_var mlump"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%hlump      ), "nf90_put_var hlump"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%lmass      ), "nf90_put_var lmass"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%mmass      ), "nf90_put_var mmass"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%jstar      ), "nf90_put_var jstar"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%hstar      ), "nf90_put_var hstar"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%rcoeff     ), "nf90_put_var rcoeff"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%rxcoeff    ), "nf90_put_var rxcoeff"    ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%wcoeff     ), "nf90_put_var wcoeff"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%xminv      ), "nf90_put_var xminv"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%tcoeff     ), "nf90_put_var tcoeff"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%elong      ), "nf90_put_var elong"      ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%elat       ), "nf90_put_var elat"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ninj       ), "nf90_put_var ninj"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%injsten    ), "nf90_put_var injsten"    ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%injwgt     ), "nf90_put_var injwgt"     ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%lapdiag    ), "nf90_put_var lapdiag"    ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%underrel   ), "nf90_put_var underrel"   ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ncvp       ), "nf90_put_var ncvp"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ncsp       ), "nf90_put_var ncsp"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ncep       ), "nf90_put_var ncep"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ncvd       ), "nf90_put_var ncvd"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%ncsd       ), "nf90_put_var ncsd"       ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%cvp        ), "nf90_put_var cvp"        ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%csp        ), "nf90_put_var csp"        ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%cep        ), "nf90_put_var cep"        ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%cvd        ), "nf90_put_var cvd"        ); vc=vc+1
+call nccheck( nf90_put_var( ncid, varid(vc), self%csd        ), "nf90_put_var csd"        ); vc=vc+1
+
+! Close file
+! ----------
+call nccheck ( nf90_close(ncid), "nf90_close" )
+
+end subroutine writeoperators
 
 ! --------------------------------------------------------------------------------------------------
 

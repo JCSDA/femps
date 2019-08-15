@@ -192,12 +192,12 @@ subroutine writegrid(self,filename)
 
 implicit none
 class(fempsgrid), intent(in) :: self
-character(len=*),  intent(in) :: filename
+character(len=*), intent(in) :: filename
 
 integer :: ncid, vc, varid(1000)
-integer :: ngrids_dimid, nfacex_dimid, nedgex_dimid, nvertx_dimid
-integer :: dimfnxtf_dimid, dimeoff_dimid, dimvoff_dimid, dimfnxte_dimid, &
-           dimvofe_dimid, dimfofv_dimid, dimeofv_dimid
+integer ::   ngrids_dimid,  nfacex_dimid,  nedgex_dimid,   nvertx_dimid, &
+           dimfnxtf_dimid, dimeoff_dimid, dimvoff_dimid, dimfnxte_dimid, &
+            dimvofe_dimid, dimfofv_dimid, dimeofv_dimid
 
 
 ! Create file
@@ -273,6 +273,9 @@ call nccheck( nf90_put_var( ncid, varid(vc), self%farea ), "nf90_put_var farea" 
 call nccheck( nf90_put_var( ncid, varid(vc), self%ldist ), "nf90_put_var ldist" ); vc = vc + 1
 call nccheck( nf90_put_var( ncid, varid(vc), self%ddist ), "nf90_put_var ddist" ); vc = vc + 1
 
+
+! Close file
+! ----------
 call nccheck ( nf90_close(ncid), "nf90_close" )
 
 end subroutine writegrid

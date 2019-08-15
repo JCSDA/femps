@@ -4,20 +4,21 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 import math
+import sys
+
 
 # User input
 # ----------
-gridfile = '/discover/nobackup/drholdaw/JediDev/femps/build-int-release/test/grid.nc4'
+path = sys.argv[1]
 
-igrid = 3 # Grid number to plot
+gridfile = path+'/griddata/grid.nc4'
 
+ig = 0 # 0-5  Grid number to plot
 
-fv3gridfile = '/gpfsm/dnb31/drholdaw/JediDev/fv3-bundle/build-intel-17.0.7.259-release-default/fv3-jedi/test/fv3grid_c0012.nc4'
 
 # File handle
 # -----------
 fh_grid = Dataset(gridfile)
-fh_fv3grid = Dataset(fv3gridfile)
 
 
 # Dimensions
@@ -40,12 +41,12 @@ nvert = np.zeros([ngrids], dtype=int)
 neoff = np.zeros([ngrids, nfacex], dtype=int)
 neofv = np.zeros([ngrids, nvertx], dtype=int)
 fnxtf = np.zeros([ngrids, dimfnxtf, nfacex], dtype=int)
-eoff  = np.zeros([ngrids, dimeoff, nfacex], dtype=int)
-voff  = np.zeros([ngrids, dimvoff, nfacex], dtype=int)
+eoff  = np.zeros([ngrids, dimeoff,  nfacex], dtype=int)
+voff  = np.zeros([ngrids, dimvoff,  nfacex], dtype=int)
 fnxte = np.zeros([ngrids, dimfnxte, nedgex], dtype=int)
-vofe  = np.zeros([ngrids, dimvofe, nedgex], dtype=int)
-fofv  = np.zeros([ngrids, dimfofv, nvertx], dtype=int)
-eofv  = np.zeros([ngrids, dimeofv, nvertx], dtype=int)
+vofe  = np.zeros([ngrids, dimvofe,  nedgex], dtype=int)
+fofv  = np.zeros([ngrids, dimfofv,  nvertx], dtype=int)
+eofv  = np.zeros([ngrids, dimeofv,  nvertx], dtype=int)
 flong = np.zeros([ngrids, nfacex])
 flat  = np.zeros([ngrids, nfacex])
 vlong = np.zeros([ngrids, nvertx])
@@ -74,36 +75,69 @@ farea[:,:]   = fh_grid.variables['farea'][:,:]
 ldist[:,:]   = fh_grid.variables['ldist'][:,:]
 ddist[:,:]   = fh_grid.variables['ddist'][:,:]
 
-cube = int(np.sqrt(nface[igrid-1]/6))
 
-fv3flon = np.zeros([6*cube,cube])
-fv3flon[:,:] = fh_fv3grid.variables['flons'][:,:]
-fv3flat = np.zeros([6*cube,cube])
-fv3flat[:,:] = fh_fv3grid.variables['flats'][:,:]
+# Plot the grid
+# -------------
 
-fv3flon = np.reshape(fv3flon, (6*cube*cube))
-fv3flat = np.reshape(fv3flat, (6*cube*cube))
+def plot_all(savepath):
+    plt.scatter(flong[ig,0:nface[ig]], flat[ig,0:nface[ig]], s=3, marker='x', c='grey')
+    plt.scatter(vlong[ig,0:nvert[ig]], vlat[ig,0:nvert[ig]], s=3, marker='.', c='black')
+    plt.xlim(0.0-limoff, 2*math.pi+limoff)
+    plt.ylim(-math.pi/2-limoff, math.pi/2+limoff)
+    plt.savefig(savepath)
+    plt.close()
+    return
 
-
-fv3vlon = np.zeros([6*cube,cube])
-fv3vlon[:,:] = fh_fv3grid.variables['vlons'][:,:]
-fv3vlat = np.zeros([6*cube,cube])
-fv3vlat[:,:] = fh_fv3grid.variables['vlats'][:,:]
-
-fv3vlon = np.reshape(fv3vlon, (6*cube*cube))
-fv3vlat = np.reshape(fv3vlat, (6*cube*cube))
+# Plotting choices
+limoff = 0.1
 
 
-print('Cube =', cube)
+# fnxtf
+# -----
 
-fig = plt.figure(figsize=(15, 7.5))
+for f1 in range(nface[ig]):
+    vstr = str(f1).zfill(3)
+    plt.scatter(flong[ig,f1], flat[ig,f1], s=20, marker='x', c='blue')
 
-#plt.scatter(flong[igrid-1,0:nface[igrid-1]], flat[igrid-1,0:nface[igrid-1]], s=20, marker='x', c='red')
-plt.scatter(vlong[igrid-1,0:nvert[igrid-1]], vlat[igrid-1,0:nvert[igrid-1]], s=20, marker='.', c='blue')
+    for f2 in range(dimfnxtf):
+        plt.scatter(flong[ig,fnxtf[ig,f2,f1]-1], flat[ig,fnxtf[ig,f2,f1]-1], s=20, marker='*', c='red')
 
-#plt.scatter(fv3flon+0.17, fv3flat, s=20, marker='.', c='red')
-plt.scatter(fv3vlon-1.4, fv3vlat, s=20, marker='.', c='red')
+    plot_all(path+'/plots/fnxtf/scatter_'+vstr+'.png')
 
-plt.savefig('scatter.png')
+# eoff
+# ----
+
+# voff
+# ----
+
+for f1 in range(nface[ig]):
+    vstr = str(f1).zfill(3)
+    plt.scatter(flong[ig,f1], flat[ig,f1], s=20, marker='x', c='blue')
+
+    for v1 in range(dimvoff):
+        plt.scatter(vlong[ig,voff[ig,v1,f1]-1], vlat[ig,voff[ig,v1,f1]-1], s=20, marker='*', c='red')
+
+    plot_all(path+'/plots/voff/scatter_'+vstr+'.png')
+
+# fnxte
+# -----
+
+# vofe
+# ----
+
+# fofv
+# ----
+for v1 in range(nvert[ig]):
+    vstr = str(v1).zfill(3)
+    plt.scatter(vlong[ig,v1], vlat[ig,v1], s=20, marker='x', c='blue')
+
+    for f1 in range(dimfofv):
+        plt.scatter(flong[ig,fofv[ig,f1,v1]-1], flat[ig,fofv[ig,f1,v1]-1], s=20, marker='*', c='red')
+
+    plot_all(path+'/plots/fofv/scatter_'+vstr+'.png')
+
+# eofv
+# ----
+
 
 fh_grid.close()

@@ -23,8 +23,8 @@ def midpoint(lat1,lon1_in,lat2,lon2_in):
 
 fig = plt.figure(figsize=(15, 7.5))
 
-c06_file = '/gpfsm/dnb31/drholdaw/JediDev/femps/test/fv3grid_c0006.nc4'
-c12_file = '/gpfsm/dnb31/drholdaw/JediDev/femps/test/fv3grid_c0012.nc4'
+c06_file = '/Users/drholdaw/Desktop/grids/fv3grid_c0006.nc4'
+c12_file = '/Users/drholdaw/Desktop/grids/fv3grid_c0012.nc4'
 
 fh_c06 = Dataset(c06_file)
 fh_c12 = Dataset(c12_file)
