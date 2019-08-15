@@ -1,5 +1,7 @@
 module femps_operators_mod
 
+use netcdf
+
 use femps_kinds_mod
 use femps_grid_mod
 use femps_utils_mod
@@ -315,17 +317,18 @@ end subroutine delete
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine writeoperators(self,filename)
+subroutine writeoperators(self,grid,filename)
 
 implicit none
 class(fempsoprs), intent(in) :: self
+type(fempsgrid),  intent(in) :: grid
 character(len=*), intent(in) :: filename
 
 integer :: ncid, vc, varid(1000)
 integer :: nvertx_dimid, ngrids_dimid, nfacex_dimid, nvertx_dimid,   nedgex_dimid,  nefmx_dimid, &
            nevmx_dimid,   nlsmx_dimid,  nmsmx_dimid,  njsmx_dimid,    nhsmx_dimid,  nrsmx_dimid, &
            nrxsmx_dimid,  nwsmx_dimid,  ntsmx_dimid, nxmisx_dimid, ngridsm1_dimid, ninjmx_dimid, &
-           ncvpmx_dimid, ncspmx_dimid, ncepmx_dimid, ncvdmx_dimid,   ncsdmx_dimid,
+           ncvpmx_dimid, ncspmx_dimid, ncepmx_dimid, ncvdmx_dimid,   ncsdmx_dimid
 
 ! Create file
 ! -----------
