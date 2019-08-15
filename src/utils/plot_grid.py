@@ -12,6 +12,7 @@ import sys
 path = sys.argv[1]
 
 gridfile = path+'/griddata/grid.nc4'
+oprsfile = path+'/griddata/operators.nc4'
 
 ig = 0 # 0-5  Grid number to plot
 
@@ -19,6 +20,7 @@ ig = 0 # 0-5  Grid number to plot
 # File handle
 # -----------
 fh_grid = Dataset(gridfile)
+fh_oprs = Dataset(oprsfile)
 
 
 # Dimensions
@@ -55,6 +57,9 @@ farea = np.zeros([ngrids, nfacex])
 ldist = np.zeros([ngrids, nedgex])
 ddist = np.zeros([ngrids, nedgex])
 
+elong = np.zeros([ngrids, nedgex])
+elat  = np.zeros([ngrids, nedgex])
+
 nface[:]     = fh_grid.variables['nface'][:]
 nedge[:]     = fh_grid.variables['nedge'][:]
 nvert[:]     = fh_grid.variables['nvert'][:]
@@ -75,69 +80,150 @@ farea[:,:]   = fh_grid.variables['farea'][:,:]
 ldist[:,:]   = fh_grid.variables['ldist'][:,:]
 ddist[:,:]   = fh_grid.variables['ddist'][:,:]
 
+elong[:,:]   = fh_oprs.variables['elong'][:,:]
+elat [:,:]   = fh_oprs.variables['elat' ][:,:]
 
 # Plot the grid
 # -------------
 
+# Plotting choices
+limoff = 0.1
+txtoff = 0.01
+fontsize = 9
+
+fmark = 'x'
+vmark = '.'
+emark = 'v'
+
 def plot_all(savepath):
-    plt.scatter(flong[ig,0:nface[ig]], flat[ig,0:nface[ig]], s=3, marker='x', c='grey')
-    plt.scatter(vlong[ig,0:nvert[ig]], vlat[ig,0:nvert[ig]], s=3, marker='.', c='black')
+    plt.scatter(flong[ig,0:nface[ig]], flat[ig,0:nface[ig]], s=3, marker=fmark, c='grey')
+    plt.scatter(vlong[ig,0:nvert[ig]], vlat[ig,0:nvert[ig]], s=3, marker=vmark, c='black')
+    plt.scatter(elong[ig,0:nedge[ig]], elat[ig,0:nedge[ig]], s=3, marker=emark, c='grey')
     plt.xlim(0.0-limoff, 2*math.pi+limoff)
     plt.ylim(-math.pi/2-limoff, math.pi/2+limoff)
     plt.savefig(savepath)
     plt.close()
     return
 
-# Plotting choices
-limoff = 0.1
 
 
 # fnxtf
 # -----
+print('fnxtf')
+for i1 in range(nface[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(flong[ig,i1], flat[ig,i1], s=20, marker=fmark, c='blue')
 
-for f1 in range(nface[ig]):
-    vstr = str(f1).zfill(3)
-    plt.scatter(flong[ig,f1], flat[ig,f1], s=20, marker='x', c='blue')
+    for i2 in range(dimfnxtf):
+        i2str = str(i2).zfill(1)
+        ind = fnxtf[ig,i2,i1]-1
+        x = flong[ig,ind]
+        y =  flat[ig,ind]
+        plt.scatter(x, y, s=20, marker=fmark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    for f2 in range(dimfnxtf):
-        plt.scatter(flong[ig,fnxtf[ig,f2,f1]-1], flat[ig,fnxtf[ig,f2,f1]-1], s=20, marker='*', c='red')
-
-    plot_all(path+'/plots/fnxtf/scatter_'+vstr+'.png')
+    plot_all(path+'/plots/fnxtf/scatter_'+i1str+'.png')
 
 # eoff
 # ----
+print('eoff')
+for i1 in range(nface[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(flong[ig,i1], flat[ig,i1], s=20, marker=fmark, c='blue')
+
+    for i2 in range(dimeoff):
+        i2str = str(i2).zfill(1)
+        ind = eoff[ig,i2,i1]-1
+        x = elong[ig,ind]
+        y =  elat[ig,ind]
+        plt.scatter(x, y, s=20, marker=emark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
+
+    plot_all(path+'/plots/eoff/scatter_'+i1str+'.png')
 
 # voff
 # ----
+print('voff')
+for i1 in range(nface[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(flong[ig,i1], flat[ig,i1], s=20, marker=fmark, c='blue')
 
-for f1 in range(nface[ig]):
-    vstr = str(f1).zfill(3)
-    plt.scatter(flong[ig,f1], flat[ig,f1], s=20, marker='x', c='blue')
+    for i2 in range(dimvoff):
+        i2str = str(i2).zfill(1)
+        ind = voff[ig,i2,i1]-1
+        x = vlong[ig,ind]
+        y =  vlat[ig,ind]
+        plt.scatter(x, y, s=20, marker=vmark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    for v1 in range(dimvoff):
-        plt.scatter(vlong[ig,voff[ig,v1,f1]-1], vlat[ig,voff[ig,v1,f1]-1], s=20, marker='*', c='red')
-
-    plot_all(path+'/plots/voff/scatter_'+vstr+'.png')
+    plot_all(path+'/plots/voff/scatter_'+i1str+'.png')
 
 # fnxte
 # -----
+print('fnxte')
+for i1 in range(nedge[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(elong[ig,i1], elat[ig,i1], s=20, marker=emark, c='blue')
+
+    for i2 in range(dimfnxte):
+        i2str = str(i2).zfill(1)
+        ind = fnxte[ig,i2,i1]-1
+        x = flong[ig,ind]
+        y =  flat[ig,ind]
+        plt.scatter(x, y, s=20, marker=fmark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
+
+    plot_all(path+'/plots/fnxte/scatter_'+i1str+'.png')
 
 # vofe
 # ----
+print('vofe')
+for i1 in range(nedge[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(elong[ig,i1], elat[ig,i1], s=20, marker=emark, c='blue')
+
+    for i2 in range(dimvofe):
+        i2str = str(i2).zfill(1)
+        ind = vofe[ig,i2,i1]-1
+        x = vlong[ig,ind]
+        y =  vlat[ig,ind]
+        plt.scatter(x, y, s=20, marker=vmark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
+
+    plot_all(path+'/plots/vofe/scatter_'+i1str+'.png')
 
 # fofv
 # ----
-for v1 in range(nvert[ig]):
-    vstr = str(v1).zfill(3)
-    plt.scatter(vlong[ig,v1], vlat[ig,v1], s=20, marker='x', c='blue')
+print('fofv')
+for i1 in range(nvert[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(vlong[ig,i1], vlat[ig,i1], s=20, marker=vmark, c='blue')
 
-    for f1 in range(dimfofv):
-        plt.scatter(flong[ig,fofv[ig,f1,v1]-1], flat[ig,fofv[ig,f1,v1]-1], s=20, marker='*', c='red')
+    for i2 in range(dimfofv):
+        i2str = str(i2).zfill(1)
+        ind = fofv[ig,i2,i1]-1
+        x = flong[ig,ind]
+        y =  flat[ig,ind]
+        plt.scatter(x, y, s=20, marker=fmark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_all(path+'/plots/fofv/scatter_'+vstr+'.png')
+    plot_all(path+'/plots/fofv/scatter_'+i1str+'.png')
 
 # eofv
 # ----
+print('eofv')
+for i1 in range(nvert[ig]):
+    i1str = str(i1).zfill(3)
+    plt.scatter(vlong[ig,i1], vlat[ig,i1], s=20, marker=vmark, c='blue')
 
+    for i2 in range(dimeofv):
+        i2str = str(i2).zfill(1)
+        ind = eofv[ig,i2,i1]-1
+        x = elong[ig,ind]
+        y =  elat[ig,ind]
+        plt.scatter(x, y, s=20, marker=emark, c='red')
+        plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
+
+    plot_all(path+'/plots/eofv/scatter_'+i1str+'.png')
 
 fh_grid.close()
