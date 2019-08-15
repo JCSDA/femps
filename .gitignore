@@ -42,3 +42,10 @@ build*
 
 # Apple files
 *DS_Store*
+
+# Plotting files
+*.pdf
+*png
+
+# Data files
+*.nc4

@@ -224,18 +224,18 @@ call nccheck( nf90_def_dim(ncid, "dimeofv",  self%dimeofv,   dimeofv_dimid), "nf
 ! ----------------
 vc = 1
 
-call nccheck( nf90_def_var(ncid, "nface", NF90_FLOAT, (/ ngrids_dimid /), varid(vc)), "nf90_def_var nface" ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "nedge", NF90_FLOAT, (/ ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "nvert", NF90_FLOAT, (/ ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "neoff", NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "neofv", NF90_FLOAT, (/ nvertx_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "fnxtf", NF90_FLOAT, (/ nfacex_dimid, dimfnxtf_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "eoff" , NF90_FLOAT, (/ nfacex_dimid, dimeoff_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "voff" , NF90_FLOAT, (/ nfacex_dimid, dimvoff_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "fnxte", NF90_FLOAT, (/ nedgex_dimid, dimfnxte_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "vofe" , NF90_FLOAT, (/ nedgex_dimid, dimvofe_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "fofv" , NF90_FLOAT, (/ nvertx_dimid, dimfofv_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
-call nccheck( nf90_def_var(ncid, "eofv" , NF90_FLOAT, (/ nvertx_dimid, dimeofv_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "nface", NF90_INT,   (/ ngrids_dimid /), varid(vc)), "nf90_def_var nface" ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "nedge", NF90_INT,   (/ ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "nvert", NF90_INT,   (/ ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "neoff", NF90_INT,   (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "neofv", NF90_INT,   (/ nvertx_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "fnxtf", NF90_INT,   (/ nfacex_dimid, dimfnxtf_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "eoff" , NF90_INT,   (/ nfacex_dimid, dimeoff_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "voff" , NF90_INT,   (/ nfacex_dimid, dimvoff_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "fnxte", NF90_INT,   (/ nedgex_dimid, dimfnxte_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "vofe" , NF90_INT,   (/ nedgex_dimid, dimvofe_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "fofv" , NF90_INT,   (/ nvertx_dimid, dimfofv_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
+call nccheck( nf90_def_var(ncid, "eofv" , NF90_INT,   (/ nvertx_dimid, dimeofv_dimid , ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
 call nccheck( nf90_def_var(ncid, "flong", NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
 call nccheck( nf90_def_var(ncid, "flat" , NF90_FLOAT, (/ nfacex_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1
 call nccheck( nf90_def_var(ncid, "vlong", NF90_FLOAT, (/ nvertx_dimid, ngrids_dimid /), varid(vc)), "nf90_def_var " ); vc = vc + 1

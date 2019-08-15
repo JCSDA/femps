@@ -18,7 +18,7 @@ real(kind=kind_real) :: psibar, rms, rms_ref, rms_rel
 ! Create a grid
 ! -------------
 call grid%setup('cs',cube=96)
-call cstestgrid(grid,1,3)
+call cstestgrid(grid,3,3)
 
 call grid%writegrid('grid.nc4')
 
