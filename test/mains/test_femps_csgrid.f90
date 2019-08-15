@@ -26,6 +26,7 @@ call grid%writegrid('grid.nc4')
 ! ---------------------
 call preliminary(grid,oprs)
 
+call oprs%writeoperators(grid,'operators.nc4')
 
 ! Problem setup
 ! -------------
