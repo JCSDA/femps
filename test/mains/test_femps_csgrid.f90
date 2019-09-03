@@ -37,8 +37,8 @@ call fv3grid_to_ugrid(grid_fv3,'/gpfsm/dnb31/drholdaw/JediDev/fv3-bundle/build-i
 
 ! Build the connectivity and extra geom
 ! -------------------------------------
-call grid_fem%build(1,1)
-call grid_fv3%build(1,1)
+call grid_fem%build_cs(1,1)
+call grid_fv3%build_cs(1,1)
 
 
 ! Write grids

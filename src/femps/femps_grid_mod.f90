@@ -63,7 +63,7 @@ type fempsgrid
 
    procedure, public :: setup
    procedure, public :: delete
-   procedure, public :: build
+   procedure, public :: build_cs
    procedure, public :: writegrid
    procedure, public :: centroid
    procedure, public :: dual_centroid
@@ -225,7 +225,7 @@ end subroutine delete
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine build(self,flavour_in,nsmooth_in)
+subroutine build_cs(self,flavour_in,nsmooth_in)
 
 implicit none
 class(fempsgrid),  intent(inout) :: self
@@ -233,7 +233,7 @@ integer, optional, intent(in)    :: flavour_in
 integer, optional, intent(in)    :: nsmooth_in
 
 ! flavour = cube sphere grid flavour
-! 1 - equiangular cube
+! 1 - equiangular cube (this is used with FV3)
 ! 2 - barycentric as in TCD14
 ! 3 - centroidal
 
@@ -837,7 +837,7 @@ enddo
 self%nefmx = MAXVAL(self%neoff)
 self%nevmx = MAXVAL(self%neofv)
 
-end subroutine build
+end subroutine build_cs
 
 ! --------------------------------------------------------------------------------------------------
 
