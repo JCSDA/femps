@@ -12,11 +12,15 @@ import shutil as sh
 # ----------
 path = sys.argv[1]
 
+# Pass a path that contains a directory called griddata that contains
+# the grid.nc4 and operators.nc4 files produced by femps
+
 gridfile = path+'/griddata/grid.nc4'
 oprsfile = path+'/griddata/operators.nc4'
 
-ig = 0 # 0-5  Grid number to plot
-
+# This should only be used for low resolution grids
+ig = 1        # 0:ngrids-1  Grid from heirarchy to plot
+grid = 'cs'   # cubed sphere (cs) or icosahedral hex (ih)
 
 # File handle
 # -----------
@@ -99,22 +103,22 @@ emark = 'v'
 sbg = 20
 sfg = 2*sbg
 
-#Clean up paths
-sh.rmtree(path+'/plots/fnxtf', ignore_errors=True)
-sh.rmtree(path+'/plots/eoff', ignore_errors=True)
-sh.rmtree(path+'/plots/voff', ignore_errors=True)
-sh.rmtree(path+'/plots/fnxte', ignore_errors=True)
-sh.rmtree(path+'/plots/vofe', ignore_errors=True)
-sh.rmtree(path+'/plots/fofv', ignore_errors=True)
-sh.rmtree(path+'/plots/eofv', ignore_errors=True)
+colors = np.array(['grey', 'red', 'purple', 'green', 'yellow', 'blue'])
 
-os.mkdir( path+'/plots/fnxtf');
-os.mkdir( path+'/plots/eoff');
-os.mkdir( path+'/plots/voff');
-os.mkdir( path+'/plots/fnxte');
-os.mkdir( path+'/plots/vofe');
-os.mkdir( path+'/plots/fofv');
-os.mkdir( path+'/plots/eofv');
+#Clean up paths
+sh.rmtree(path+'/plots', ignore_errors=True)
+
+os.mkdir( path+'/plots')
+os.mkdir( path+'/plots/verts')
+os.mkdir( path+'/plots/fnxtf')
+os.mkdir( path+'/plots/eoff')
+os.mkdir( path+'/plots/voff')
+os.mkdir( path+'/plots/fnxte')
+os.mkdir( path+'/plots/vofe')
+os.mkdir( path+'/plots/fofv')
+os.mkdir( path+'/plots/eofv')
+
+cube = 3*2**ig
 
 def plot_all():
     plt.figure(figsize=(15,7.5))
@@ -129,6 +133,27 @@ def plot_save(savepath):
     plt.savefig(savepath)
     plt.close()
     return
+
+def plot_all_color():
+
+    plt.figure(figsize=(15,7.5))
+    for n in range(6):
+
+        tmplong = np.reshape(flong[ig,n*cube*cube:(n+1)*cube*cube], (cube*cube))
+        tmplat  = np.reshape(flat [ig,n*cube*cube:(n+1)*cube*cube], (cube*cube))
+        plt.scatter(tmplong, tmplat, s=6, marker=fmark, c=colors[n])
+
+
+# Print all vertices colored by face (cube sphere only)
+# -----------------------------------------------------
+for i1 in range(nvert[ig]):
+
+    print('Verts:', i1+1, 'of', nvert[ig] )
+
+    if (grid == 'cs'):
+        plot_all_color()
+    plt.scatter(vlong[ig,i1], vlat[ig,i1], s=6, marker=vmark, c='black')
+    plot_save(path+'/plots/verts/vertsbyface_'+str(i1).zfill(3)+'.png')
 
 # fnxtf
 # -----
@@ -146,7 +171,7 @@ for i1 in range(nface[ig]):
         plt.scatter(x, y, s=sfg, marker=fmark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/fnxtf/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/fnxtf/fnxtf_'+i1str+'.png')
 
 # eoff
 # ----
@@ -164,7 +189,7 @@ for i1 in range(nface[ig]):
         plt.scatter(x, y, s=sfg, marker=emark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/eoff/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/eoff/eoff_'+i1str+'.png')
 
 # voff
 # ----
@@ -182,7 +207,7 @@ for i1 in range(nface[ig]):
         plt.scatter(x, y, s=sfg, marker=vmark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/voff/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/voff/voff_'+i1str+'.png')
 
 # fnxte
 # -----
@@ -200,7 +225,7 @@ for i1 in range(nedge[ig]):
         plt.scatter(x, y, s=sfg, marker=fmark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/fnxte/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/fnxte/fnxte_'+i1str+'.png')
 
 # vofe
 # ----
@@ -218,7 +243,7 @@ for i1 in range(nedge[ig]):
         plt.scatter(x, y, s=sfg, marker=vmark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/vofe/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/vofe/vofe_'+i1str+'.png')
 
 # fofv
 # ----
@@ -236,7 +261,7 @@ for i1 in range(nvert[ig]):
         plt.scatter(x, y, s=sfg, marker=fmark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/fofv/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/fofv/fofv_'+i1str+'.png')
 
 # eofv
 # ----
@@ -254,6 +279,6 @@ for i1 in range(nvert[ig]):
         plt.scatter(x, y, s=sfg, marker=emark, c='red')
         plt.text(x+txtoff, y+txtoff, i2str, fontsize=fontsize)
 
-    plot_save(path+'/plots/eofv/scatter_'+i1str+'.png')
+    plot_save(path+'/plots/eofv/eofv_'+i1str+'.png')
 
 fh_grid.close()

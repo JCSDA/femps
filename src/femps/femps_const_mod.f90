@@ -6,7 +6,8 @@ implicit none
 private
 
 ! Pi
-real(kind=kind_real), parameter, public :: pi = 3.14159265358979323_kind_real
+real(kind=kind_real), parameter, public :: piby4 = atan(1.0_kind_real)
+real(kind=kind_real), parameter, public :: pi = 4.0_kind_real*piby4
 real(kind=kind_real), parameter, public :: piby2 = 0.5_kind_real*pi
 
 ! Earth's radius

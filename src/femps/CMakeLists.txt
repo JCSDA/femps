@@ -1,5 +1,6 @@
 list( APPEND femps_src_files
 femps_const_mod.f90
+femps_fv3_mod.f90
 femps_grid_mod.f90
 femps_kinds_mod.f90
 femps_operators_mod.f90
