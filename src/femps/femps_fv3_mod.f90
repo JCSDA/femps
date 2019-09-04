@@ -39,8 +39,6 @@ real(kind=kind_real), allocatable, dimension(:,:,:) :: vlat
 
 do iv = 1,grid%ngrids
 
-  print*, path
-
   write(filename,"(A,A10,I0.4,A4)") trim(path),'/fv3grid_c',grid%ncube(iv),'.nc4'
 
   call message('Reading fv3 grid from '//trim(filename), trace)
