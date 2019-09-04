@@ -39,11 +39,13 @@ real(kind=kind_real), allocatable, dimension(:,:,:) :: vlat
 
 do iv = 1,grid%ngrids
 
-  write(filename,"(A,A10,I0.4,A4)") path,'/fv3grid_c',grid%ncube(iv),'.nc4'
+  print*, path
+
+  write(filename,"(A,A10,I0.4,A4)") trim(path),'/fv3grid_c',grid%ncube(iv),'.nc4'
 
   call message('Reading fv3 grid from '//trim(filename), trace)
 
-  call fv3grid_read(grid,filename,fxdim,vxdim,flong,flat,vlong,vlat)
+  call fv3grid_read(filename,fxdim,vxdim,flong,flat,vlong,vlat)
 
   call fv3grid_to_ugrid_(grid,iv,fxdim,vxdim,flat,flong,vlat,vlong)
 
@@ -55,11 +57,10 @@ end subroutine fv3grid_to_ugrid_read
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine fv3grid_read(grid,filename,fxdim,vxdim,flong,flat,vlong,vlat)
+subroutine fv3grid_read(filename,fxdim,vxdim,flong,flat,vlong,vlat)
 
 implicit none
 
-type(fempsgrid),                                     intent(inout) :: grid
 character(len=*),                                    intent(in)    :: filename
 integer,                                             intent(out)   :: fxdim
 integer,                                             intent(out)   :: vxdim

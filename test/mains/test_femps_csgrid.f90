@@ -11,8 +11,6 @@ implicit none
 type(fempsgrid) :: grid_fem, grid_fv3
 type(fempsoprs) :: oprs_fem, oprs_fv3
 
-integer :: n
-
 type testdata
   integer :: npass
   real(kind=kind_real), allocatable, dimension(:) :: zeta, psi0, psi
