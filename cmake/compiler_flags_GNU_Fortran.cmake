@@ -26,7 +26,7 @@ set( CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -finline-functions ")
 # DEBUG FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fbacktrace -Wall -Wextra -pedantic -fimplicit-none -fcheck=all" )
+set( CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fbacktrace -Wall -Wextra -pedantic -fimplicit-none -fcheck=all -ffree-line-length-none" )
 
 ####################################################################
 # BIT REPRODUCIBLE FLAGS
