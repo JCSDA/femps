@@ -177,13 +177,13 @@ end subroutine spdist
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine addtab(dim1,dim2,tab,index,entry)
+subroutine addtab(dim1,dim2,tab,index,tabentry)
 
 implicit none
 integer, intent(in)    :: dim1,dim2
 integer, intent(inout) :: tab(dim1,dim2)
 integer, intent(in)    :: index
-integer, intent(in)    :: entry
+integer, intent(in)    :: tabentry
 
 integer :: i
 character(len=2056) :: errormessage
@@ -198,13 +198,13 @@ if (i.gt.dim2) then
   call message('**********')
   call message('table full')
   call message('**********')
-  write(errormessage,*) index,entry,dim1,dim2
+  write(errormessage,*) index,tabentry,dim1,dim2
   call message(errormessage)
   write(errormessage,*) tab(index,:)
   call message(errormessage,fatal)
 endif
 if (tab(index,i).ne.0) goto 100
-tab(index,i)=entry
+tab(index,i)=tabentry
 
 end subroutine addtab
 
