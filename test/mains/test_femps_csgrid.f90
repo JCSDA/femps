@@ -50,6 +50,9 @@ call grid_fv3%writegrid('/gpfsm/dnb31/drholdaw/JediScratch/femps/griddata/grid_f
 call preliminary(grid_fem,oprs_fem)
 call preliminary(grid_fv3,oprs_fv3)
 
+call oprs_fem%pdelete() !Partial deletes
+call oprs_fv3%pdelete() !Partial deletes
+
 call oprs_fem%writeoperators(grid_fem,'operators_fem.nc4')
 call oprs_fv3%writeoperators(grid_fv3,'operators_fv3.nc4')
 

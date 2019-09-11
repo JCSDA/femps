@@ -29,7 +29,6 @@ type(fempsoprs), intent(inout) :: oprs
 ! -------------------
 call oprs%setup(grid)
 call oprs%build(grid)
-call oprs%pdelete() ! Partial delete
 
 ! Dimensionalize
 ! --------------

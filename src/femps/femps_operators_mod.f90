@@ -14,6 +14,8 @@ public fempsoprs
 ! ------------------------------------
 type fempsoprs
 
+  logical :: poisson   ! Some opertors are not needed if just used in Poisson problem
+
   ! Dimensions
   ! ----------
   integer :: nmsmx
@@ -132,11 +134,17 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine setup(self,grid)
+subroutine setup(self,grid,poisson)
 
 implicit none
-class(fempsoprs), intent(inout) :: self
-type(fempsgrid),  intent(in)    :: grid
+class(fempsoprs),  intent(inout) :: self
+type(fempsgrid),   intent(in)    :: grid
+logical, optional, intent(in)    :: poisson
+
+! These operators can be used in the more general Helmholtz solver
+! some opertors are not needed for the Poisson problem
+self%poisson = .true.
+if (present(poisson)) self%poisson = poisson
 
 self%nlsmx  = 1
 self%nmsmx  = 2*grid%nefmx - 1
@@ -149,7 +157,6 @@ self%ntsmx  = grid%nefmx
 
 allocate(self%varea(grid%nvertx,grid%ngrids))
 allocate(self%eoffin(grid%nfacex,grid%nefmx,grid%ngrids))
-allocate(self%eofvin(grid%nvertx,grid%nevmx,grid%ngrids))
 
 ! Hodge star, mass matrix, and related operators
 ! ----------------------------------------------
@@ -158,20 +165,12 @@ allocate(self%nlsten    (grid%nfacex,grid%ngrids))
 allocate(self%nmsten    (grid%nedgex,grid%ngrids))
 allocate(self%njsten    (grid%nvertx,grid%ngrids))
 allocate(self%nhsten    (grid%nedgex,grid%ngrids))
-allocate(self%nrsten    (grid%nfacex,grid%ngrids))
-allocate(self%nrxsten   (grid%nvertx,grid%ngrids))
-allocate(self%nwsten    (grid%nedgex,grid%ngrids))
-allocate(self%ntsten    (grid%nfacex,grid%ngrids))
 allocate(self%nxminvsten(grid%nedgex,grid%ngrids))
 
 allocate(self%lsten  (grid%nfacex,self%nlsmx,grid%ngrids))
 allocate(self%msten  (grid%nedgex,self%nmsmx,grid%ngrids))
 allocate(self%jsten  (grid%nvertx,self%njsmx,grid%ngrids))
 allocate(self%hsten  (grid%nedgex,self%nhsmx,grid%ngrids))
-allocate(self%rsten  (grid%nfacex,self%nrsmx,grid%ngrids))
-allocate(self%rxsten (grid%nvertx,self%nrxsmx,grid%ngrids))
-allocate(self%wsten  (grid%nedgex,self%nwsmx,grid%ngrids))
-allocate(self%tsten  (grid%nfacex,self%ntsmx,grid%ngrids))
 !self%xminvsten deferred until buildxminv
 
 allocate(self%jlump(grid%nvertx,grid%ngrids))
@@ -182,11 +181,8 @@ allocate(self%lmass  (grid%nfacex,self%nlsmx,grid%ngrids))
 allocate(self%mmass  (grid%nedgex,self%nmsmx,grid%ngrids))
 allocate(self%jstar  (grid%nvertx,self%njsmx,grid%ngrids))
 allocate(self%hstar  (grid%nedgex,self%nhsmx,grid%ngrids))
-allocate(self%rcoeff (grid%nfacex,self%nrsmx,grid%ngrids))
-allocate(self%rxcoeff(grid%nvertx,self%nrxsmx,grid%ngrids))
-allocate(self%wcoeff (grid%nedgex,self%nwsmx,grid%ngrids))
 !self%xminv deferred until buildxminv
-allocate(self%tcoeff (grid%nfacex,self%ntsmx,self%ntsmx,grid%ngrids))
+
 
 allocate(self%elong(grid%nedgex,grid%ngrids))
 allocate(self%elat (grid%nedgex,grid%ngrids))
@@ -198,9 +194,28 @@ allocate(self%ninj(grid%nfacex,grid%ngrids-1))
 allocate(self%lapdiag(grid%nfacex,grid%ngrids))
 allocate(self%underrel(grid%ngrids))
 
+
+! Some operators are not used for the Poisson problem
+if (.not.self%poisson) then
+
+  allocate(self%eofvin (grid%nvertx,grid%nevmx,grid%ngrids))
+  allocate(self%nrsten (grid%nfacex,grid%ngrids))
+  allocate(self%nrxsten(grid%nvertx,grid%ngrids))
+  allocate(self%nwsten (grid%nedgex,grid%ngrids))
+  allocate(self%ntsten (grid%nfacex,grid%ngrids))
+  allocate(self%rsten  (grid%nfacex,self%nrsmx,grid%ngrids))
+  allocate(self%rxsten (grid%nvertx,self%nrxsmx,grid%ngrids))
+  allocate(self%wsten  (grid%nedgex,self%nwsmx,grid%ngrids))
+  allocate(self%tsten  (grid%nfacex,self%ntsmx,grid%ngrids))
+  allocate(self%rcoeff (grid%nfacex,self%nrsmx,grid%ngrids))
+  allocate(self%rxcoeff(grid%nvertx,self%nrxsmx,grid%ngrids))
+  allocate(self%wcoeff (grid%nedgex,self%nwsmx,grid%ngrids))
+  allocate(self%tcoeff (grid%nfacex,self%ntsmx,self%ntsmx,grid%ngrids))
+
+endif
+
 ! Information defining compound elements
 ! --------------------------------------
-
 self%ncvpmx = 2*grid%nefmx
 self%ncspmx = 2 + 4*grid%nefmx
 self%ncepmx = 2*grid%nefmx
@@ -212,6 +227,7 @@ allocate(self%ncsp(grid%nedgex))
 allocate(self%ncep(grid%nvertx))
 allocate(self%ncvd(grid%nvertx))
 allocate(self%ncsd(grid%nedgex))
+
 allocate(self%cvp (grid%nfacex,self%ncvpmx))
 allocate(self%csp (grid%nedgex,self%ncspmx))
 allocate(self%cep (grid%nvertx,self%ncepmx))
@@ -363,111 +379,111 @@ call nccheck( nf90_def_dim(ncid, "ncsdmx"  , self%ncsdmx  ,   ncsdmx_dimid), "nf
 ! ----------------
 vc = 1
 
-! call nccheck( nf90_def_var(ncid, "varea",      NF90_FLOAT, (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var varea" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "eoffin",     NF90_INT  , (/nfacex_dimid,nefmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var eoffin" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "eofvin",     NF90_INT  , (/nvertx_dimid,nevmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var eofvin" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nlsten",     NF90_INT  , (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nlsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nmsten",     NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nmsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "njsten",     NF90_INT  , (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var njsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nhsten",     NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nhsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nrsten",     NF90_INT  , (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nrsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nrxsten",    NF90_INT  , (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nrxsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nwsten",     NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nwsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ntsten",     NF90_INT  , (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var ntsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "nxminvsten", NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nxminvsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "lsten",      NF90_INT  , (/nfacex_dimid,nlsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var lsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "msten",      NF90_INT  , (/nedgex_dimid,nmsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var msten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "jsten",      NF90_INT  , (/nvertx_dimid,njsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var jsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "hsten",      NF90_INT  , (/nedgex_dimid,nhsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var hsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "rsten",      NF90_INT  , (/nfacex_dimid,nrsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var rsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "rxsten",     NF90_INT  , (/nvertx_dimid,nrxsmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var rxsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "wsten",      NF90_INT  , (/nedgex_dimid,nwsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var wsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "tsten",      NF90_INT  , (/nfacex_dimid,ntsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var tsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "xminvsten",  NF90_INT  , (/nedgex_dimid,nxmisx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var xminvsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "jlump",      NF90_FLOAT, (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var jlump" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "mlump",      NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var mlump" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "hlump",      NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var hlump" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "lmass",      NF90_FLOAT, (/nfacex_dimid,nlsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var lmass" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "mmass",      NF90_FLOAT, (/nedgex_dimid,nmsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var mmass" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "jstar",      NF90_FLOAT, (/nvertx_dimid,njsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var jstar" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "hstar",      NF90_FLOAT, (/nedgex_dimid,nhsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var hstar" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "rcoeff",     NF90_FLOAT, (/nfacex_dimid,nrsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var rcoeff" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "rxcoeff",    NF90_FLOAT, (/nvertx_dimid,nrxsmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var rxcoeff" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "wcoeff",     NF90_FLOAT, (/nedgex_dimid,nwsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var wcoeff" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "xminv",      NF90_FLOAT, (/nedgex_dimid,nxmisx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var xminv" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "tcoeff",     NF90_FLOAT, (/nfacex_dimid,ntsmx_dimid, ntsmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var tcoeff" ); vc=vc+1
-call nccheck( nf90_def_var(ncid, "elong",      NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var elong" ); vc=vc+1
-call nccheck( nf90_def_var(ncid, "elat",       NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var elat" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ninj",       NF90_INT  , (/nfacex_dimid,ngridsm1_dimid/), varid(vc)), "nf90_def_var ninj" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "injsten",    NF90_INT  , (/nfacex_dimid,ninjmx_dimid,ngridsm1_dimid/), varid(vc)), "nf90_def_var injsten" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "injwgt",     NF90_FLOAT, (/nfacex_dimid,ninjmx_dimid,ngridsm1_dimid/), varid(vc)), "nf90_def_var injwgt" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "lapdiag",    NF90_FLOAT, (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var lapdiag" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "underrel",   NF90_FLOAT, (/ngrids_dimid/), varid(vc)), "nf90_def_var underrel" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ncvp",       NF90_INT  , (/nfacex_dimid/), varid(vc)), "nf90_def_var ncvp" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ncsp",       NF90_INT  , (/nedgex_dimid/), varid(vc)), "nf90_def_var ncsp" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ncep",       NF90_INT  , (/nvertx_dimid/), varid(vc)), "nf90_def_var ncep" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ncvd",       NF90_INT  , (/nvertx_dimid/), varid(vc)), "nf90_def_var ncvd" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "ncsd",       NF90_INT  , (/nedgex_dimid/), varid(vc)), "nf90_def_var ncsd" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "cvp",        NF90_FLOAT, (/nfacex_dimid,ncvpmx_dimid/), varid(vc)), "nf90_def_var cvp" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "csp",        NF90_FLOAT, (/nedgex_dimid,ncspmx_dimid/), varid(vc)), "nf90_def_var csp" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "cep",        NF90_FLOAT, (/nvertx_dimid,ncepmx_dimid/), varid(vc)), "nf90_def_var cep" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "cvd",        NF90_FLOAT, (/nvertx_dimid,ncvdmx_dimid/), varid(vc)), "nf90_def_var cvd" ); vc=vc+1
-! call nccheck( nf90_def_var(ncid, "csd",        NF90_FLOAT, (/nedgex_dimid,ncsdmx_dimid/), varid(vc)), "nf90_def_var csd" ); vc=vc+1
+if (allocated(self%varea     )) call nccheck( nf90_def_var(ncid, "varea",      NF90_FLOAT, (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var varea" ); vc=vc+1
+if (allocated(self%eoffin    )) call nccheck( nf90_def_var(ncid, "eoffin",     NF90_INT  , (/nfacex_dimid,nefmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var eoffin" ); vc=vc+1
+if (allocated(self%eofvin    )) call nccheck( nf90_def_var(ncid, "eofvin",     NF90_INT  , (/nvertx_dimid,nevmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var eofvin" ); vc=vc+1
+if (allocated(self%nlsten    )) call nccheck( nf90_def_var(ncid, "nlsten",     NF90_INT  , (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nlsten" ); vc=vc+1
+if (allocated(self%nmsten    )) call nccheck( nf90_def_var(ncid, "nmsten",     NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nmsten" ); vc=vc+1
+if (allocated(self%njsten    )) call nccheck( nf90_def_var(ncid, "njsten",     NF90_INT  , (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var njsten" ); vc=vc+1
+if (allocated(self%nhsten    )) call nccheck( nf90_def_var(ncid, "nhsten",     NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nhsten" ); vc=vc+1
+if (allocated(self%nrsten    )) call nccheck( nf90_def_var(ncid, "nrsten",     NF90_INT  , (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nrsten" ); vc=vc+1
+if (allocated(self%nrxsten   )) call nccheck( nf90_def_var(ncid, "nrxsten",    NF90_INT  , (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nrxsten" ); vc=vc+1
+if (allocated(self%nwsten    )) call nccheck( nf90_def_var(ncid, "nwsten",     NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nwsten" ); vc=vc+1
+if (allocated(self%ntsten    )) call nccheck( nf90_def_var(ncid, "ntsten",     NF90_INT  , (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var ntsten" ); vc=vc+1
+if (allocated(self%nxminvsten)) call nccheck( nf90_def_var(ncid, "nxminvsten", NF90_INT  , (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var nxminvsten" ); vc=vc+1
+if (allocated(self%lsten     )) call nccheck( nf90_def_var(ncid, "lsten",      NF90_INT  , (/nfacex_dimid,nlsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var lsten" ); vc=vc+1
+if (allocated(self%msten     )) call nccheck( nf90_def_var(ncid, "msten",      NF90_INT  , (/nedgex_dimid,nmsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var msten" ); vc=vc+1
+if (allocated(self%jsten     )) call nccheck( nf90_def_var(ncid, "jsten",      NF90_INT  , (/nvertx_dimid,njsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var jsten" ); vc=vc+1
+if (allocated(self%hsten     )) call nccheck( nf90_def_var(ncid, "hsten",      NF90_INT  , (/nedgex_dimid,nhsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var hsten" ); vc=vc+1
+if (allocated(self%rsten     )) call nccheck( nf90_def_var(ncid, "rsten",      NF90_INT  , (/nfacex_dimid,nrsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var rsten" ); vc=vc+1
+if (allocated(self%rxsten    )) call nccheck( nf90_def_var(ncid, "rxsten",     NF90_INT  , (/nvertx_dimid,nrxsmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var rxsten" ); vc=vc+1
+if (allocated(self%wsten     )) call nccheck( nf90_def_var(ncid, "wsten",      NF90_INT  , (/nedgex_dimid,nwsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var wsten" ); vc=vc+1
+if (allocated(self%tsten     )) call nccheck( nf90_def_var(ncid, "tsten",      NF90_INT  , (/nfacex_dimid,ntsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var tsten" ); vc=vc+1
+if (allocated(self%xminvsten )) call nccheck( nf90_def_var(ncid, "xminvsten",  NF90_INT  , (/nedgex_dimid,nxmisx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var xminvsten" ); vc=vc+1
+if (allocated(self%jlump     )) call nccheck( nf90_def_var(ncid, "jlump",      NF90_FLOAT, (/nvertx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var jlump" ); vc=vc+1
+if (allocated(self%mlump     )) call nccheck( nf90_def_var(ncid, "mlump",      NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var mlump" ); vc=vc+1
+if (allocated(self%hlump     )) call nccheck( nf90_def_var(ncid, "hlump",      NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var hlump" ); vc=vc+1
+if (allocated(self%lmass     )) call nccheck( nf90_def_var(ncid, "lmass",      NF90_FLOAT, (/nfacex_dimid,nlsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var lmass" ); vc=vc+1
+if (allocated(self%mmass     )) call nccheck( nf90_def_var(ncid, "mmass",      NF90_FLOAT, (/nedgex_dimid,nmsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var mmass" ); vc=vc+1
+if (allocated(self%jstar     )) call nccheck( nf90_def_var(ncid, "jstar",      NF90_FLOAT, (/nvertx_dimid,njsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var jstar" ); vc=vc+1
+if (allocated(self%hstar     )) call nccheck( nf90_def_var(ncid, "hstar",      NF90_FLOAT, (/nedgex_dimid,nhsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var hstar" ); vc=vc+1
+if (allocated(self%rcoeff    )) call nccheck( nf90_def_var(ncid, "rcoeff",     NF90_FLOAT, (/nfacex_dimid,nrsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var rcoeff" ); vc=vc+1
+if (allocated(self%rxcoeff   )) call nccheck( nf90_def_var(ncid, "rxcoeff",    NF90_FLOAT, (/nvertx_dimid,nrxsmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var rxcoeff" ); vc=vc+1
+if (allocated(self%wcoeff    )) call nccheck( nf90_def_var(ncid, "wcoeff",     NF90_FLOAT, (/nedgex_dimid,nwsmx_dimid, ngrids_dimid/), varid(vc)), "nf90_def_var wcoeff" ); vc=vc+1
+if (allocated(self%xminv     )) call nccheck( nf90_def_var(ncid, "xminv",      NF90_FLOAT, (/nedgex_dimid,nxmisx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var xminv" ); vc=vc+1
+if (allocated(self%tcoeff    )) call nccheck( nf90_def_var(ncid, "tcoeff",     NF90_FLOAT, (/nfacex_dimid,ntsmx_dimid, ntsmx_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var tcoeff" ); vc=vc+1
+if (allocated(self%elong     )) call nccheck( nf90_def_var(ncid, "elong",      NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var elong" ); vc=vc+1
+if (allocated(self%elat      )) call nccheck( nf90_def_var(ncid, "elat",       NF90_FLOAT, (/nedgex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var elat" ); vc=vc+1
+if (allocated(self%ninj      )) call nccheck( nf90_def_var(ncid, "ninj",       NF90_INT  , (/nfacex_dimid,ngridsm1_dimid/), varid(vc)), "nf90_def_var ninj" ); vc=vc+1
+if (allocated(self%injsten   )) call nccheck( nf90_def_var(ncid, "injsten",    NF90_INT  , (/nfacex_dimid,ninjmx_dimid,ngridsm1_dimid/), varid(vc)), "nf90_def_var injsten" ); vc=vc+1
+if (allocated(self%injwgt    )) call nccheck( nf90_def_var(ncid, "injwgt",     NF90_FLOAT, (/nfacex_dimid,ninjmx_dimid,ngridsm1_dimid/), varid(vc)), "nf90_def_var injwgt" ); vc=vc+1
+if (allocated(self%lapdiag   )) call nccheck( nf90_def_var(ncid, "lapdiag",    NF90_FLOAT, (/nfacex_dimid,ngrids_dimid/), varid(vc)), "nf90_def_var lapdiag" ); vc=vc+1
+if (allocated(self%underrel  )) call nccheck( nf90_def_var(ncid, "underrel",   NF90_FLOAT, (/ngrids_dimid/), varid(vc)), "nf90_def_var underrel" ); vc=vc+1
+if (allocated(self%ncvp      )) call nccheck( nf90_def_var(ncid, "ncvp",       NF90_INT  , (/nfacex_dimid/), varid(vc)), "nf90_def_var ncvp" ); vc=vc+1
+if (allocated(self%ncsp      )) call nccheck( nf90_def_var(ncid, "ncsp",       NF90_INT  , (/nedgex_dimid/), varid(vc)), "nf90_def_var ncsp" ); vc=vc+1
+if (allocated(self%ncep      )) call nccheck( nf90_def_var(ncid, "ncep",       NF90_INT  , (/nvertx_dimid/), varid(vc)), "nf90_def_var ncep" ); vc=vc+1
+if (allocated(self%ncvd      )) call nccheck( nf90_def_var(ncid, "ncvd",       NF90_INT  , (/nvertx_dimid/), varid(vc)), "nf90_def_var ncvd" ); vc=vc+1
+if (allocated(self%ncsd      )) call nccheck( nf90_def_var(ncid, "ncsd",       NF90_INT  , (/nedgex_dimid/), varid(vc)), "nf90_def_var ncsd" ); vc=vc+1
+if (allocated(self%cvp       )) call nccheck( nf90_def_var(ncid, "cvp",        NF90_FLOAT, (/nfacex_dimid,ncvpmx_dimid/), varid(vc)), "nf90_def_var cvp" ); vc=vc+1
+if (allocated(self%csp       )) call nccheck( nf90_def_var(ncid, "csp",        NF90_FLOAT, (/nedgex_dimid,ncspmx_dimid/), varid(vc)), "nf90_def_var csp" ); vc=vc+1
+if (allocated(self%cep       )) call nccheck( nf90_def_var(ncid, "cep",        NF90_FLOAT, (/nvertx_dimid,ncepmx_dimid/), varid(vc)), "nf90_def_var cep" ); vc=vc+1
+if (allocated(self%cvd       )) call nccheck( nf90_def_var(ncid, "cvd",        NF90_FLOAT, (/nvertx_dimid,ncvdmx_dimid/), varid(vc)), "nf90_def_var cvd" ); vc=vc+1
+if (allocated(self%csd       )) call nccheck( nf90_def_var(ncid, "csd",        NF90_FLOAT, (/nedgex_dimid,ncsdmx_dimid/), varid(vc)), "nf90_def_var csd" ); vc=vc+1
 
 ! Write variables
 ! ---------------
 vc = 1
 
-!call nccheck( nf90_put_var( ncid, varid(vc), self%varea      ), "nf90_put_var varea"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%eoffin     ), "nf90_put_var eoffin"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%eofvin     ), "nf90_put_var eofvin"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nlsten     ), "nf90_put_var nlsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nmsten     ), "nf90_put_var nmsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%njsten     ), "nf90_put_var njsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nhsten     ), "nf90_put_var nhsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nrsten     ), "nf90_put_var nrsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nrxsten    ), "nf90_put_var nrxsten"    ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nwsten     ), "nf90_put_var nwsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ntsten     ), "nf90_put_var ntsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%nxminvsten ), "nf90_put_var nxminvsten" ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%lsten      ), "nf90_put_var lsten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%msten      ), "nf90_put_var msten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%jsten      ), "nf90_put_var jsten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%hsten      ), "nf90_put_var hsten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%rsten      ), "nf90_put_var rsten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%rxsten     ), "nf90_put_var rxsten"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%wsten      ), "nf90_put_var wsten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%tsten      ), "nf90_put_var tsten"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%xminvsten  ), "nf90_put_var xminvsten"  ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%jlump      ), "nf90_put_var jlump"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%mlump      ), "nf90_put_var mlump"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%hlump      ), "nf90_put_var hlump"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%lmass      ), "nf90_put_var lmass"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%mmass      ), "nf90_put_var mmass"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%jstar      ), "nf90_put_var jstar"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%hstar      ), "nf90_put_var hstar"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%rcoeff     ), "nf90_put_var rcoeff"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%rxcoeff    ), "nf90_put_var rxcoeff"    ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%wcoeff     ), "nf90_put_var wcoeff"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%xminv      ), "nf90_put_var xminv"      ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%tcoeff     ), "nf90_put_var tcoeff"     ); vc=vc+1
-call nccheck( nf90_put_var( ncid, varid(vc), self%elong      ), "nf90_put_var elong"      ); vc=vc+1
-call nccheck( nf90_put_var( ncid, varid(vc), self%elat       ), "nf90_put_var elat"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ninj       ), "nf90_put_var ninj"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%injsten    ), "nf90_put_var injsten"    ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%injwgt     ), "nf90_put_var injwgt"     ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%lapdiag    ), "nf90_put_var lapdiag"    ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%underrel   ), "nf90_put_var underrel"   ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ncvp       ), "nf90_put_var ncvp"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ncsp       ), "nf90_put_var ncsp"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ncep       ), "nf90_put_var ncep"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ncvd       ), "nf90_put_var ncvd"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%ncsd       ), "nf90_put_var ncsd"       ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%cvp        ), "nf90_put_var cvp"        ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%csp        ), "nf90_put_var csp"        ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%cep        ), "nf90_put_var cep"        ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%cvd        ), "nf90_put_var cvd"        ); vc=vc+1
-!call nccheck( nf90_put_var( ncid, varid(vc), self%csd        ), "nf90_put_var csd"        ); vc=vc+1
+if (allocated(self%varea     )) call nccheck( nf90_put_var( ncid, varid(vc), self%varea     ), "nf90_put_var varea"      ); vc=vc+1
+if (allocated(self%eoffin    )) call nccheck( nf90_put_var( ncid, varid(vc), self%eoffin    ), "nf90_put_var eoffin"     ); vc=vc+1
+if (allocated(self%eofvin    )) call nccheck( nf90_put_var( ncid, varid(vc), self%eofvin    ), "nf90_put_var eofvin"     ); vc=vc+1
+if (allocated(self%nlsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%nlsten    ), "nf90_put_var nlsten"     ); vc=vc+1
+if (allocated(self%nmsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%nmsten    ), "nf90_put_var nmsten"     ); vc=vc+1
+if (allocated(self%njsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%njsten    ), "nf90_put_var njsten"     ); vc=vc+1
+if (allocated(self%nhsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%nhsten    ), "nf90_put_var nhsten"     ); vc=vc+1
+if (allocated(self%nrsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%nrsten    ), "nf90_put_var nrsten"     ); vc=vc+1
+if (allocated(self%nrxsten   )) call nccheck( nf90_put_var( ncid, varid(vc), self%nrxsten   ), "nf90_put_var nrxsten"    ); vc=vc+1
+if (allocated(self%nwsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%nwsten    ), "nf90_put_var nwsten"     ); vc=vc+1
+if (allocated(self%ntsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%ntsten    ), "nf90_put_var ntsten"     ); vc=vc+1
+if (allocated(self%nxminvsten)) call nccheck( nf90_put_var( ncid, varid(vc), self%nxminvsten), "nf90_put_var nxminvsten" ); vc=vc+1
+if (allocated(self%lsten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%lsten     ), "nf90_put_var lsten"      ); vc=vc+1
+if (allocated(self%msten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%msten     ), "nf90_put_var msten"      ); vc=vc+1
+if (allocated(self%jsten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%jsten     ), "nf90_put_var jsten"      ); vc=vc+1
+if (allocated(self%hsten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%hsten     ), "nf90_put_var hsten"      ); vc=vc+1
+if (allocated(self%rsten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%rsten     ), "nf90_put_var rsten"      ); vc=vc+1
+if (allocated(self%rxsten    )) call nccheck( nf90_put_var( ncid, varid(vc), self%rxsten    ), "nf90_put_var rxsten"     ); vc=vc+1
+if (allocated(self%wsten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%wsten     ), "nf90_put_var wsten"      ); vc=vc+1
+if (allocated(self%tsten     )) call nccheck( nf90_put_var( ncid, varid(vc), self%tsten     ), "nf90_put_var tsten"      ); vc=vc+1
+if (allocated(self%xminvsten )) call nccheck( nf90_put_var( ncid, varid(vc), self%xminvsten ), "nf90_put_var xminvsten"  ); vc=vc+1
+if (allocated(self%jlump     )) call nccheck( nf90_put_var( ncid, varid(vc), self%jlump     ), "nf90_put_var jlump"      ); vc=vc+1
+if (allocated(self%mlump     )) call nccheck( nf90_put_var( ncid, varid(vc), self%mlump     ), "nf90_put_var mlump"      ); vc=vc+1
+if (allocated(self%hlump     )) call nccheck( nf90_put_var( ncid, varid(vc), self%hlump     ), "nf90_put_var hlump"      ); vc=vc+1
+if (allocated(self%lmass     )) call nccheck( nf90_put_var( ncid, varid(vc), self%lmass     ), "nf90_put_var lmass"      ); vc=vc+1
+if (allocated(self%mmass     )) call nccheck( nf90_put_var( ncid, varid(vc), self%mmass     ), "nf90_put_var mmass"      ); vc=vc+1
+if (allocated(self%jstar     )) call nccheck( nf90_put_var( ncid, varid(vc), self%jstar     ), "nf90_put_var jstar"      ); vc=vc+1
+if (allocated(self%hstar     )) call nccheck( nf90_put_var( ncid, varid(vc), self%hstar     ), "nf90_put_var hstar"      ); vc=vc+1
+if (allocated(self%rcoeff    )) call nccheck( nf90_put_var( ncid, varid(vc), self%rcoeff    ), "nf90_put_var rcoeff"     ); vc=vc+1
+if (allocated(self%rxcoeff   )) call nccheck( nf90_put_var( ncid, varid(vc), self%rxcoeff   ), "nf90_put_var rxcoeff"    ); vc=vc+1
+if (allocated(self%wcoeff    )) call nccheck( nf90_put_var( ncid, varid(vc), self%wcoeff    ), "nf90_put_var wcoeff"     ); vc=vc+1
+if (allocated(self%xminv     )) call nccheck( nf90_put_var( ncid, varid(vc), self%xminv     ), "nf90_put_var xminv"      ); vc=vc+1
+if (allocated(self%tcoeff    )) call nccheck( nf90_put_var( ncid, varid(vc), self%tcoeff    ), "nf90_put_var tcoeff"     ); vc=vc+1
+if (allocated(self%elong     )) call nccheck( nf90_put_var( ncid, varid(vc), self%elong     ), "nf90_put_var elong"      ); vc=vc+1
+if (allocated(self%elat      )) call nccheck( nf90_put_var( ncid, varid(vc), self%elat      ), "nf90_put_var elat"       ); vc=vc+1
+if (allocated(self%ninj      )) call nccheck( nf90_put_var( ncid, varid(vc), self%ninj      ), "nf90_put_var ninj"       ); vc=vc+1
+if (allocated(self%injsten   )) call nccheck( nf90_put_var( ncid, varid(vc), self%injsten   ), "nf90_put_var injsten"    ); vc=vc+1
+if (allocated(self%injwgt    )) call nccheck( nf90_put_var( ncid, varid(vc), self%injwgt    ), "nf90_put_var injwgt"     ); vc=vc+1
+if (allocated(self%lapdiag   )) call nccheck( nf90_put_var( ncid, varid(vc), self%lapdiag   ), "nf90_put_var lapdiag"    ); vc=vc+1
+if (allocated(self%underrel  )) call nccheck( nf90_put_var( ncid, varid(vc), self%underrel  ), "nf90_put_var underrel"   ); vc=vc+1
+if (allocated(self%ncvp      )) call nccheck( nf90_put_var( ncid, varid(vc), self%ncvp      ), "nf90_put_var ncvp"       ); vc=vc+1
+if (allocated(self%ncsp      )) call nccheck( nf90_put_var( ncid, varid(vc), self%ncsp      ), "nf90_put_var ncsp"       ); vc=vc+1
+if (allocated(self%ncep      )) call nccheck( nf90_put_var( ncid, varid(vc), self%ncep      ), "nf90_put_var ncep"       ); vc=vc+1
+if (allocated(self%ncvd      )) call nccheck( nf90_put_var( ncid, varid(vc), self%ncvd      ), "nf90_put_var ncvd"       ); vc=vc+1
+if (allocated(self%ncsd      )) call nccheck( nf90_put_var( ncid, varid(vc), self%ncsd      ), "nf90_put_var ncsd"       ); vc=vc+1
+if (allocated(self%cvp       )) call nccheck( nf90_put_var( ncid, varid(vc), self%cvp       ), "nf90_put_var cvp"        ); vc=vc+1
+if (allocated(self%csp       )) call nccheck( nf90_put_var( ncid, varid(vc), self%csp       ), "nf90_put_var csp"        ); vc=vc+1
+if (allocated(self%cep       )) call nccheck( nf90_put_var( ncid, varid(vc), self%cep       ), "nf90_put_var cep"        ); vc=vc+1
+if (allocated(self%cvd       )) call nccheck( nf90_put_var( ncid, varid(vc), self%cvd       ), "nf90_put_var cvd"        ); vc=vc+1
+if (allocated(self%csd       )) call nccheck( nf90_put_var( ncid, varid(vc), self%csd       ), "nf90_put_var csd"        ); vc=vc+1
 
 ! Close file
 ! ----------
@@ -922,19 +938,21 @@ do igrid = 1, grid%ngrids
     enddo
   enddo
 
-  do iv1 = 1, grid%nvert(igrid)
-    do ix = 1, grid%neofv(iv1,igrid)
-      ie1 = grid%eofv(iv1,ix,igrid)
-      iv2 = grid%vofe(ie1,1,igrid)
-      if (iv1 == iv2) THEN
-        ! This edge points away from vertex iv1
-        self%eofvin(iv1,ix,igrid) = -1.0_kind_real
-      else
-        ! This edge points towards vertex iv1
-        self%eofvin(iv1,ix,igrid) = 1.0_kind_real
-      endif
+  if (.not.self%poisson) then
+    do iv1 = 1, grid%nvert(igrid)
+      do ix = 1, grid%neofv(iv1,igrid)
+        ie1 = grid%eofv(iv1,ix,igrid)
+        iv2 = grid%vofe(ie1,1,igrid)
+        if (iv1 == iv2) THEN
+          ! This edge points away from vertex iv1
+          self%eofvin(iv1,ix,igrid) = -1.0_kind_real
+        else
+          ! This edge points towards vertex iv1
+          self%eofvin(iv1,ix,igrid) = 1.0_kind_real
+        endif
+      enddo
     enddo
-  enddo
+  endif
 
 enddo
 
@@ -996,13 +1014,17 @@ call buildM(self,grid,igrid)
 call message('  Done buildM',trace)
 
 ! Vp to Ep transfer operator R
-call buildR(self,grid,igrid)
-call message('  Done buildR',trace)
+if (.not.self%poisson) then
+  call buildR(self,grid,igrid)
+  call message('  Done buildR',trace)
+endif
 
 ! W operator for constructing perp of vectors
 ! (maps E_p tp E_p)
-call buildW(self,grid,igrid)
-call message('  Done buildW',trace)
+if (.not.self%poisson) then
+  call buildW(self,grid,igrid)
+  call message('  Done buildW',trace)
+endif
 
 ! Vd to Ep transfer operator J
 call buildJ(self,grid,igrid)
@@ -1847,8 +1869,10 @@ real(kind=kind_real) :: long, lat, x0(3), x1(3), x2(3), x3(3), &
                         l1sq, l2sq, l3sq, a, sum1, &
                         a1(2), a2(2), b1(2*grid%nefmx), b2(2*grid%nefmx)
 
-self%ntsten(:,igrid) = grid%neoff(:,igrid)
-self%tsten(:,:,igrid) = grid%eoff(:,:,igrid)
+if (.not.self%poisson) then
+  self%ntsten(:,igrid) = grid%neoff(:,igrid)
+  self%tsten(:,:,igrid) = grid%eoff(:,:,igrid)
+endif
 
 ne = grid%nedge(igrid)
 
@@ -2057,7 +2081,9 @@ do ie0 = 1, ne
         self%msten(ie0,ixsten,igrid) = ie2
         self%mmass(ie0,ixsten,igrid) = sum1
       endif
-      self%tcoeff(if1,ix0,ixe,igrid) = sum1
+      if (.not.self%poisson) then
+        self%tcoeff(if1,ix0,ixe,igrid) = sum1
+      endif
 
     enddo
 
@@ -2670,8 +2696,7 @@ else
 
   write(errormessage,*) 'grid%gtype = ', grid%gtype
   call message(errormessage)
-  call message('This grid is not recognized. Please programme the &
-                multigrid restriction operator for this grid.', fatal)
+  call message('This grid is not recognized. Please programme the multigrid restriction operator for this grid.', fatal)
 
 endif
 
