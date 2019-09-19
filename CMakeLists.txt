@@ -37,10 +37,10 @@ include( femps_compiler_flags )
 # Dependencies
 ################################################################################
 
-# MPI
-ecbuild_find_mpi( COMPONENTS Fortran REQUIRED )
-ecbuild_include_mpi()
-link_libraries(${MPI_Fortran_LIBRARIES})
+# # MPI
+# ecbuild_find_mpi( COMPONENTS Fortran REQUIRED )
+# ecbuild_include_mpi()
+# link_libraries(${MPI_Fortran_LIBRARIES})
 
 # NetCDF
 find_package( NetCDF REQUIRED COMPONENTS Fortran F90 )
