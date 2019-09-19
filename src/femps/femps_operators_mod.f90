@@ -142,7 +142,7 @@ type(fempsgrid),   intent(in)    :: grid
 logical, optional, intent(in)    :: poisson
 
 ! These operators can be used in the more general Helmholtz solver
-! some opertors are not needed for the Poisson problem
+! some opertors are not needed for the Poisson problem, set true to avoid allocation
 self%poisson = .true.
 if (present(poisson)) self%poisson = poisson
 
@@ -183,7 +183,6 @@ allocate(self%jstar  (grid%nvertx,self%njsmx,grid%ngrids))
 allocate(self%hstar  (grid%nedgex,self%nhsmx,grid%ngrids))
 !self%xminv deferred until buildxminv
 
-
 allocate(self%elong(grid%nedgex,grid%ngrids))
 allocate(self%elat (grid%nedgex,grid%ngrids))
 
@@ -193,7 +192,6 @@ allocate(self%ninj(grid%nfacex,grid%ngrids-1))
 
 allocate(self%lapdiag(grid%nfacex,grid%ngrids))
 allocate(self%underrel(grid%ngrids))
-
 
 ! Some operators are not used for the Poisson problem
 if (.not.self%poisson) then
