@@ -59,6 +59,8 @@ type fempsgrid
   integer, allocatable, dimension(:,:,:) :: fofv    ! faces around each vertex on each grid
   integer, allocatable, dimension(:,:,:) :: eofv    ! edges incident on each vertex on each grid
 
+  integer :: niter  ! Number of iterations for the solver
+
   contains
 
    procedure, public :: setup
@@ -76,17 +78,21 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine setup(self,gridtype,ngrids,cube)
+subroutine setup(self,gridtype,ngrids,cube,niter)
 
 implicit none
 class(fempsgrid),  intent(inout) :: self
 character(len=2),  intent(in)    :: gridtype
 integer, optional, intent(in)    :: ngrids
 integer, optional, intent(in)    :: cube
+integer, optional, intent(in)    :: niter
 
 integer :: igrid, ncube
 
 self%gtype = gridtype
+
+self%niter = 10
+if (present(niter)) self%niter = niter
 
 if (self%gtype=='cs') then
 
@@ -189,6 +195,23 @@ allocate(self%vlat    (self%nvertx,self%ngrids))
 allocate(self%farea   (self%nfacex,self%ngrids))
 allocate(self%ldist   (self%nedgex,self%ngrids))
 allocate(self%ddist   (self%nedgex,self%ngrids))
+
+self%neoff = 0
+self%neofv = 0
+self%fnxtf = 0
+self%eoff  = 0
+self%voff  = 0
+self%fnxte = 0
+self%vofe  = 0
+self%fofv  = 0
+self%eofv  = 0
+self%flong = 0.0_kind_real
+self%flat  = 0.0_kind_real
+self%vlong = 0.0_kind_real
+self%vlat  = 0.0_kind_real
+self%farea = 0.0_kind_real
+self%ldist = 0.0_kind_real
+self%ddist = 0.0_kind_real
 
 end subroutine setup
 
@@ -834,8 +857,8 @@ do igrid = 1, self%ngrids
   enddo
 enddo
 
-self%nefmx = MAXVAL(self%neoff)
-self%nevmx = MAXVAL(self%neofv)
+self%nefmx = maxval(self%neoff)
+self%nevmx = maxval(self%neofv)
 
 end subroutine build_cs
 
