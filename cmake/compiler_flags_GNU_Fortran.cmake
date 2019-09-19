@@ -20,7 +20,7 @@ endif( )
 # RELEASE FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -finline-functions ")
+set( CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -finline-functions -ffree-line-length-none")
 
 ####################################################################
 # DEBUG FLAGS
@@ -32,7 +32,7 @@ set( CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fbacktrace -Wall -Wextra -pedantic -fi
 # BIT REPRODUCIBLE FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_FLAGS_BIT     "-O2 -funroll-all-loops -finline-functions" )
+set( CMAKE_Fortran_FLAGS_BIT     "-O2 -funroll-all-loops -finline-functions -ffree-line-length-none" )
 
 ####################################################################
 # LINK FLAGS
