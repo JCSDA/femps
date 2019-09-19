@@ -856,7 +856,7 @@ end subroutine laplace
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine inverselaplace(grid,oprs,igrid,npass,hf,f,removemean_in)
+subroutine inverselaplace(grid,oprs,igrid,hf,f,removemean_in)
 
 ! To apply the inverse Laplacian operator to the input field hf,
 ! on grid igrid, the result appearing in the output field f.
@@ -866,7 +866,6 @@ implicit none
 type(fempsgrid),      intent(in)  :: grid
 type(fempsoprs),      intent(in)  :: oprs
 integer,              intent(in)  :: igrid
-integer,              intent(in)  :: npass
 real(kind=kind_real), intent(in)  :: hf(grid%nface(igrid))
 real(kind=kind_real), intent(out) :: f(grid%nface(igrid))
 logical, optional,    intent(in)  :: removemean_in
@@ -894,7 +893,7 @@ f = 0.0_kind_real
 temp2 = 0.0_kind_real
 
 ! Iterate several passes
-do ipass = 1, npass
+do ipass = 1, grid%niter
 
   ! Compute residual based on latest estimate
   call massL(oprs,f,ff2,grid%ngrids,nf)
