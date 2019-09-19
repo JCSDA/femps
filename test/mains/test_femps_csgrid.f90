@@ -12,25 +12,24 @@ type(fempsgrid) :: grid_fem, grid_fv3
 type(fempsoprs) :: oprs_fem, oprs_fv3
 
 type testdata
-  integer :: npass
   real(kind=kind_real), allocatable, dimension(:) :: zeta, psi0, psi
 end type testdata
 
-real(kind=kind_real) :: rms_fem, rms_fv3, rms_ref, rms_rel
+real(kind=kind_real) :: rms_fem, rms_fv3, rms_ref, rms_rel, tol
 
 type(testdata) :: test_fem
 type(testdata) :: test_fv3
 
 ! Create the FEMPS test grid
 ! --------------------------
-call grid_fem%setup('cs',ngrids=6,cube=96)
+call grid_fem%setup('cs',ngrids=6,cube=96,niter=10)
 call cstestgrid(grid_fem)
 
 
 ! Create the FV3 test grid
 ! ------------------------
-call grid_fv3%setup('cs',ngrids=5,cube=96)
-call fv3grid_to_ugrid(grid_fv3,'/gpfsm/dnb31/drholdaw/JediDev/fv3-bundle/build-intel-17.0.7.259-release-default/fv3-jedi/test')
+call grid_fv3%setup('cs',ngrids=5,cube=96,niter=50)
+call fv3grid_to_ugrid(grid_fv3,'Data/')
 
 
 ! Build the connectivity and extra geom
@@ -41,8 +40,8 @@ call grid_fv3%build_cs(1,1)
 
 ! Write grids
 ! -----------
-call grid_fem%writegrid('/gpfsm/dnb31/drholdaw/JediScratch/femps/griddata/grid_fem.nc4')
-call grid_fv3%writegrid('/gpfsm/dnb31/drholdaw/JediScratch/femps/griddata/grid_fv3.nc4')
+call grid_fem%writegrid('grid_fem.nc4')
+call grid_fv3%writegrid('grid_fv3.nc4')
 
 
 ! Perform all the setup
@@ -70,8 +69,8 @@ call laplace(grid_fv3,oprs_fv3,grid_fv3%ngrids,test_fv3%psi0,test_fv3%zeta)
 
 ! Inverse Laplacian
 ! -----------------
-call inverselaplace(grid_fem,oprs_fem,grid_fem%ngrids,test_fem%npass,test_fem%zeta,test_fem%psi,.true.)
-call inverselaplace(grid_fv3,oprs_fv3,grid_fv3%ngrids,test_fv3%npass,test_fv3%zeta,test_fv3%psi,.true.)
+call inverselaplace(grid_fem,oprs_fem,grid_fem%ngrids,test_fem%zeta,test_fem%psi,.true.)
+call inverselaplace(grid_fv3,oprs_fv3,grid_fv3%ngrids,test_fv3%zeta,test_fv3%psi,.true.)
 
 
 ! Print output
@@ -82,38 +81,50 @@ call test_endloop(test_fv3,grid_fv3,rms_fv3)
 
 ! Test pass/fail - femps
 ! --------------
-rms_ref = 5.632313769573670E-004_kind_real
-rms_rel = (rms_fem - rms_ref)
+tol = 1.0e-13_kind_real
 
-if (rms_rel > 1.0e-15_kind_real) then
+rms_ref = 5.632313769573670E-004_kind_real
+rms_rel = abs((rms_fem - rms_ref)/rms_ref)
+
+
+print*, ' '
+print*, ' '
+print*, 'Result for femps internal grid'
+print*, 'Expected RMS', rms_ref
+print*, 'Actual RMS', rms_fem
+print*, 'Relative difference', rms_rel 
+
+if (abs(rms_rel) > tol) then
   print*, ' '
-  print*, 'Final RMS', rms_fem
-  print*, 'Reference final RMS', rms_ref
-  print*, 'Relative difference', rms_rel
-  print*, 'Failed with requirement relative difference <= 1.0e-16'
+  print*, 'Test failed with requirement that relative difference to expected RMS <= 1.0e-16'
   print*, ' '
   stop 1
 else
+  print*, ' '
   print*, 'Test passed'
+  print*, ' '
 endif
 
 ! Test pass/fail - fv3
 ! --------------
-rms_ref = 9.367543386191256E-002
-rms_rel = (rms_fv3 - rms_ref)
+rms_ref = 6.481994273258480E-005_kind_real
+rms_rel = abs((rms_fv3 - rms_ref)/rms_ref)
 
-if (rms_rel > 1.0e-15_kind_real) then
+print*, 'Result for fv3 grid'
+print*, 'Expected RMS', rms_ref
+print*, 'Actual RMS', rms_fv3
+print*, 'Relative difference', rms_rel 
+
+if (abs(rms_rel) > tol) then
   print*, ' '
-  print*, 'Final RMS', rms_fv3
-  print*, 'Reference final RMS', rms_ref
-  print*, 'Relative difference', rms_rel
-  print*, 'Failed with requirement relative difference <= 1.0e-16'
+  print*, 'Test failed with requirement that relative difference to expected RMS <= 1.0e-16'
   print*, ' '
   stop 1
 else
+  print*, ' '
   print*, 'Test passed'
+  print*, ' '
 endif
-
 
 ! Clean up
 ! --------
@@ -124,6 +135,8 @@ call grid_fv3%delete()
 
 call test_delete(test_fem)
 call test_delete(test_fv3)
+
+stop 0
 
 ! --------------------------------------------------------------------------------------------------
 
@@ -140,8 +153,6 @@ type(fempsgrid), intent(in)    :: grid
 
 integer :: n
 real(kind=kind_real) :: psibar
-
-test%npass = 10 ! Number of iterations
 
 allocate(test%zeta(grid%nface(grid%ngrids)))
 allocate(test%psi0(grid%nface(grid%ngrids)))
