@@ -46,6 +46,3 @@ build*
 # Plotting files
 *.pdf
 *png
-
-# Data files
-*.nc4
