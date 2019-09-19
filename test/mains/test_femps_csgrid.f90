@@ -81,7 +81,7 @@ call test_endloop(test_fv3,grid_fv3,rms_fv3)
 
 ! Test pass/fail - femps
 ! --------------
-tol = 1.0e-13_kind_real
+tol = 1.0e-11_kind_real
 
 rms_ref = 5.632313769573670E-004_kind_real
 rms_rel = abs((rms_fem - rms_ref)/rms_ref)
@@ -96,7 +96,7 @@ print*, 'Relative difference', rms_rel
 
 if (abs(rms_rel) > tol) then
   print*, ' '
-  print*, 'Test failed with requirement that relative difference to expected RMS <= 1.0e-16'
+  print*, 'Test failed with requirement that relative difference to expected RMS <=',tol
   print*, ' '
   stop 1
 else
@@ -117,7 +117,7 @@ print*, 'Relative difference', rms_rel
 
 if (abs(rms_rel) > tol) then
   print*, ' '
-  print*, 'Test failed with requirement that relative difference to expected RMS <= 1.0e-16'
+  print*, 'Test failed with requirement that relative difference to expected RMS <=',tol
   print*, ' '
   stop 1
 else
