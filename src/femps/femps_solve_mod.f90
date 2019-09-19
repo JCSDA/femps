@@ -856,7 +856,7 @@ end subroutine laplace
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine inverselaplace(grid,oprs,igrid,npass,hf,f)
+subroutine inverselaplace(grid,oprs,igrid,npass,hf,f,removemean_in)
 
 ! To apply the inverse Laplacian operator to the input field hf,
 ! on grid igrid, the result appearing in the output field f.
@@ -869,10 +869,15 @@ integer,              intent(in)  :: igrid
 integer,              intent(in)  :: npass
 real(kind=kind_real), intent(in)  :: hf(grid%nface(igrid))
 real(kind=kind_real), intent(out) :: f(grid%nface(igrid))
+logical, optional,    intent(in)  :: removemean_in
 
 integer :: nf, ne, nv, ipass
 real(kind=kind_real) :: beta = 1.0_kind_real, fbar
 real(kind=kind_real), allocatable, dimension(:) :: ff1, ff2, ff3, ff4, temp1, temp2
+logical :: removemean
+
+removemean = .false.
+if (present(removemean_in)) removemean = removemean_in
 
 nf = grid%nface(grid%ngrids)
 ne = grid%nedge(grid%ngrids)
@@ -912,9 +917,11 @@ do ipass = 1, npass
   ! *** We could think about adding beta*ff3 here and tuning beta for optimal convergence ***
   f = f + beta*ff3
 
-  ! Remove global mean (to ensure unambiguous result)
-  fbar = SUM(f)/SUM(grid%farea(:,grid%ngrids))
-  f = f - fbar*grid%farea(:,grid%ngrids)
+  if (removemean) then
+    ! Remove global mean (to ensure unambiguous result)
+    fbar = SUM(f)/SUM(grid%farea(:,grid%ngrids))
+    f = f - fbar*grid%farea(:,grid%ngrids)
+  endif
 
 enddo
 

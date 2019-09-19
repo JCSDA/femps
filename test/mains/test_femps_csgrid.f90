@@ -70,8 +70,8 @@ call laplace(grid_fv3,oprs_fv3,grid_fv3%ngrids,test_fv3%psi0,test_fv3%zeta)
 
 ! Inverse Laplacian
 ! -----------------
-call inverselaplace(grid_fem,oprs_fem,grid_fem%ngrids,test_fem%npass,test_fem%zeta,test_fem%psi)
-call inverselaplace(grid_fv3,oprs_fv3,grid_fv3%ngrids,test_fv3%npass,test_fv3%zeta,test_fv3%psi)
+call inverselaplace(grid_fem,oprs_fem,grid_fem%ngrids,test_fem%npass,test_fem%zeta,test_fem%psi,.true.)
+call inverselaplace(grid_fv3,oprs_fv3,grid_fv3%ngrids,test_fv3%npass,test_fv3%zeta,test_fv3%psi,.true.)
 
 
 ! Print output
