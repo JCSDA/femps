@@ -1,3 +1,8 @@
+! (C) Copyright 2019 UCAR
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
 module femps_fv3_mod
 
 use netcdf
@@ -346,7 +351,7 @@ call nccheck ( nf90_get_var( ncid, varid, field_fv3), "nf90_get_var "//trim(fiel
 
 call nccheck ( nf90_close(ncid), "nf90_close" )
 
-call fv3field_to_ufield(grid,grid%ncube(igrid),field_fv3,field) 
+call fv3field_to_ufield(grid,grid%ncube(igrid),field_fv3,field)
 
 deallocate(field_fv3)
 

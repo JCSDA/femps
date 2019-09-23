@@ -1,3 +1,8 @@
+! (C) Copyright 2019 UCAR and John Thuburn, University of Exeter, UK
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
 program fempoisson_driver
 
 use femps_kinds_mod
@@ -92,7 +97,7 @@ print*, ' '
 print*, 'Result for femps internal grid'
 print*, 'Expected RMS', rms_ref
 print*, 'Actual RMS', rms_fem
-print*, 'Relative difference', rms_rel 
+print*, 'Relative difference', rms_rel
 
 if (abs(rms_rel) > tol) then
   print*, ' '
@@ -113,7 +118,7 @@ rms_rel = abs((rms_fv3 - rms_ref)/rms_ref)
 print*, 'Result for fv3 grid'
 print*, 'Expected RMS', rms_ref
 print*, 'Actual RMS', rms_fv3
-print*, 'Relative difference', rms_rel 
+print*, 'Relative difference', rms_rel
 
 if (abs(rms_rel) > tol) then
   print*, ' '
