@@ -1,4 +1,4 @@
-! (C) Copyright 2019 UCAR and John Thuburn, University of Exeter, UK
+! (C) Copyright 2019 UCAR and 2011-2018 John Thuburn, University of Exeter, UK
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
