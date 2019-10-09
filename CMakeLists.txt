@@ -44,7 +44,7 @@ include( femps_extra_macros )
 # link_libraries(${MPI_Fortran_LIBRARIES})
 
 # NetCDF
-find_package( NetCDF REQUIRED COMPONENTS Fortran F90 )
+find_package( NetCDF REQUIRED COMPONENTS Fortran )
 include_directories( ${NETCDF_INCLUDE_DIR} )
 
 ################################################################################
