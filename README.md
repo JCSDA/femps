@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 # Finite Element Mesh Poisson Solver (FEMPS)
 
 (C) Copyright 2018-2019 UCAR and 2011-2018 John Thuburn, University of Exeter, UK.
