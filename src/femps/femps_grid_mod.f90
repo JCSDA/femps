@@ -22,6 +22,14 @@ type fempsgrid
   ! ---------
   character(len=2) :: gtype  ! cs (cubed-sphere), ih (icosahedral hexagons), di (diamonds)
 
+  ! Mpi information
+  ! ---------------
+  integer :: comm, rank, size
+
+  ! Check convergence
+  ! -----------------
+  logical :: check_convergence
+
   ! Dimensions of each grid and hierarchy
   ! -------------------------------------
   integer :: ngrids      ! Number of grids in multigrid hierarchy
@@ -83,7 +91,7 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine setup(self,gridtype,ngrids,cube,niter)
+subroutine setup(self,gridtype,ngrids,cube,niter,comm,rank,size,check_convergence)
 
 implicit none
 class(fempsgrid),  intent(inout) :: self
@@ -91,6 +99,10 @@ character(len=2),  intent(in)    :: gridtype
 integer, optional, intent(in)    :: ngrids
 integer, optional, intent(in)    :: cube
 integer, optional, intent(in)    :: niter
+integer, optional, intent(in)    :: comm
+integer, optional, intent(in)    :: rank
+integer, optional, intent(in)    :: size
+logical, optional, intent(in)    :: check_convergence
 
 integer :: igrid, ncube
 
@@ -98,6 +110,19 @@ self%gtype = gridtype
 
 self%niter = 10
 if (present(niter)) self%niter = niter
+
+! MPI information
+self%comm = 0
+self%rank = 0
+self%size = 1
+if (present(comm)) self%comm = comm
+if (present(rank)) self%rank = rank
+if (present(size)) self%size = size
+
+! Check convergence
+self%check_convergence = .false.
+if (present(check_convergence)) self%check_convergence = check_convergence
+
 
 if (self%gtype=='cs') then
 
