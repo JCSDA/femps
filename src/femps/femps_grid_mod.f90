@@ -24,7 +24,7 @@ type fempsgrid
 
   ! Mpi information
   ! ---------------
-  integer :: comm, rank, size
+  integer :: comm, rank, csize
 
   ! Check convergence
   ! -----------------
@@ -91,7 +91,7 @@ contains
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine setup(self,gridtype,ngrids,cube,niter,comm,rank,size,check_convergence)
+subroutine setup(self,gridtype,ngrids,cube,niter,comm,rank,csize,check_convergence)
 
 implicit none
 class(fempsgrid),  intent(inout) :: self
@@ -101,7 +101,7 @@ integer, optional, intent(in)    :: cube
 integer, optional, intent(in)    :: niter
 integer, optional, intent(in)    :: comm
 integer, optional, intent(in)    :: rank
-integer, optional, intent(in)    :: size
+integer, optional, intent(in)    :: csize
 logical, optional, intent(in)    :: check_convergence
 
 integer :: igrid, ncube
@@ -114,10 +114,10 @@ if (present(niter)) self%niter = niter
 ! MPI information
 self%comm = 0
 self%rank = 0
-self%size = 1
+self%csize = 1
 if (present(comm)) self%comm = comm
 if (present(rank)) self%rank = rank
-if (present(size)) self%size = size
+if (present(csize)) self%csize = csize
 
 ! Check convergence
 self%check_convergence = .false.
