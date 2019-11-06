@@ -315,11 +315,11 @@ if (present(code)) then
   if (code == fatal) then
     noteprint = 'FATAL: '//trim(note)
   elseif (code == trace) then
-      noteprint = 'TRACE: '//trim(note)
+    !noteprint = 'TRACE: '//trim(note)
   endif
 endif
 
-print*, trim(noteprint)
+!print*, trim(noteprint)
 
 if (present(code)) then
   if (code == fatal) then

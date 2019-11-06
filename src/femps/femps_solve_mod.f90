@@ -879,6 +879,8 @@ integer :: nf, ne, nv, ipass
 real(kind=kind_real) :: beta = 1.0_kind_real, fbar
 real(kind=kind_real), allocatable, dimension(:) :: ff1, ff2, ff3, ff4, temp1, temp2
 logical :: removemean
+real(kind=kind_real), allocatable, dimension(:) :: hf_check
+real(kind=kind_real) :: rmse
 
 removemean = .false.
 if (present(removemean_in)) removemean = removemean_in
@@ -896,6 +898,8 @@ allocate(temp2(ne))
 
 f = 0.0_kind_real
 temp2 = 0.0_kind_real
+
+if (grid%check_convergence) allocate(hf_check(nf))
 
 ! Iterate several passes
 do ipass = 1, grid%niter
@@ -925,6 +929,13 @@ do ipass = 1, grid%niter
     ! Remove global mean (to ensure unambiguous result)
     fbar = SUM(f)/SUM(grid%farea(:,grid%ngrids))
     f = f - fbar*grid%farea(:,grid%ngrids)
+  endif
+
+  ! Optionally track the convergence
+  if (grid%check_convergence) then
+    call laplace(grid,oprs,igrid,f,hf_check)
+    rmse = sqrt(sum((hf_check/grid%farea(:,grid%ngrids)-hf/grid%farea(:,grid%ngrids))**2)/nf)
+    print*, "INVERSELAP RMSE:", grid%rank, ipass, rmse
   endif
 
 enddo
