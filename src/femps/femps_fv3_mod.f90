@@ -293,7 +293,8 @@ call nccheck( nf90_put_att(ncid, varid(vc), "axis", "e") )
 call nccheck( nf90_put_att(ncid, varid(vc), "grads_dim", "e") )
 
 vc = vc + 1
-call nccheck( nf90_def_var(ncid, fieldname, NF90_DOUBLE, (/ xdim_dimid, ydim_dimid, tile_dimid /), varid(vc)), "nf90_def_var field" )
+call nccheck( nf90_def_var(ncid, fieldname, NF90_DOUBLE, &
+    (/ xdim_dimid, ydim_dimid, tile_dimid /), varid(vc)), "nf90_def_var field" )
 call nccheck( nf90_put_att(ncid, varid(vc), "long_name"    , fieldname      ), "nf90_put_att" )
 call nccheck( nf90_put_att(ncid, varid(vc), "units"        , '1'            ), "nf90_put_att" )
 call nccheck( nf90_put_att(ncid, varid(vc), "standard_name", fieldname      ), "nf90_put_att" )
