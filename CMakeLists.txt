@@ -33,7 +33,6 @@ set( FEMPS_LINKER_LANGUAGE Fortran )
 # Standard compiler flags
 ################################################################################
 
-include( femps_compiler_flags )
 include( femps_extra_macros )
 
 ################################################################################
