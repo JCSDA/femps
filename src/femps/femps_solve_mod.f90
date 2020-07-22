@@ -861,7 +861,7 @@ end subroutine laplace
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine inverselaplace(grid,oprs,igrid,hf,f,removemean_in)
+subroutine inverselaplace(grid,oprs,igrid,hf,f,removemean_in,level)
 
 ! To apply the inverse Laplacian operator to the input field hf,
 ! on grid igrid, the result appearing in the output field f.
@@ -874,6 +874,7 @@ integer,              intent(in)  :: igrid
 real(kind=kind_real), intent(in)  :: hf(grid%nface(igrid))
 real(kind=kind_real), intent(out) :: f(grid%nface(igrid))
 logical, optional,    intent(in)  :: removemean_in
+integer, optional,    intent(in)  :: level
 
 integer :: nf, ne, nv, ipass
 real(kind=kind_real) :: beta = 1.0_kind_real, fbar
@@ -933,9 +934,10 @@ do ipass = 1, grid%niter
 
   ! Optionally track the convergence
   if (grid%check_convergence) then
+    if (.not. present(level)) call message("If checking convergence inverselaplace needs level input", fatal)
     call laplace(grid,oprs,igrid,f,hf_check)
     rmse = sqrt(sum((hf_check/grid%farea(:,grid%ngrids)-hf/grid%farea(:,grid%ngrids))**2)/nf)
-    print*, "INVERSELAP RMSE:", grid%rank, ipass, rmse
+    print*, "INVERSELAP RMSE:", level, ipass, rmse
   endif
 
 enddo
