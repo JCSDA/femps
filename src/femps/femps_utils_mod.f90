@@ -323,6 +323,7 @@ endif
 
 if (present(code)) then
   if (code == fatal) then
+    print*, trim(noteprint)
     stop 1
   endif
 endif
