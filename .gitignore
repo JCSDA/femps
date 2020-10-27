@@ -1,5 +1,11 @@
 # Build directory
-build
+build*
+
+# vim
+*.swp
+
+# Mac files
+*.DS_Store
 
 # Prerequisites
 *.d
@@ -33,3 +39,10 @@ build
 *.exe
 *.out
 *.app
+
+# Apple files
+*DS_Store*
+
+# Plotting files
+*.pdf
+*png

@@ -1,5 +1,5 @@
 ################################################################################
-# FEMPS 
+# FEMPS
 ################################################################################
 
 cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
@@ -7,6 +7,8 @@ cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
 project( femps Fortran )
 
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH})
+
+set( CMAKE_DIRECTORY_LABELS "femps" )
 
 set( ECBUILD_DEFAULT_BUILD_TYPE Release )
 set( ENABLE_OS_TESTS           OFF CACHE BOOL "Disable OS tests" FORCE )
@@ -31,19 +33,19 @@ set( FEMPS_LINKER_LANGUAGE Fortran )
 # Standard compiler flags
 ################################################################################
 
-include( femps_compiler_flags )
+include( femps_extra_macros )
 
 ################################################################################
 # Dependencies
 ################################################################################
 
-# MPI
-ecbuild_find_mpi( COMPONENTS Fortran REQUIRED )
-ecbuild_include_mpi()
-link_libraries(${MPI_Fortran_LIBRARIES})
+# # MPI
+# ecbuild_find_mpi( COMPONENTS Fortran REQUIRED )
+# ecbuild_include_mpi()
+# link_libraries(${MPI_Fortran_LIBRARIES})
 
 # NetCDF
-find_package( NetCDF REQUIRED COMPONENTS Fortran F90 )
+find_package( NetCDF REQUIRED COMPONENTS Fortran )
 include_directories( ${NETCDF_INCLUDE_DIR} )
 
 ################################################################################
@@ -74,8 +76,8 @@ endforeach()
 include_directories( ${FEMPS_INCLUDE_DIRS}
                      ${FEMPS_EXTRA_INCLUDE_DIRS} )
 
-add_subdirectory( mains )
 add_subdirectory( src )
+add_subdirectory( test )
 
 ################################################################################
 # Finalise configuration
