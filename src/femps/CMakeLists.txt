@@ -18,6 +18,10 @@ list (APPEND FEMPS_SRC_DEP ${femps_src_files} )
 #Add the library
 ecbuild_add_library( TARGET          femps
                      SOURCES         ${femps_src_files}
-                     LIBS            ${NETCDF_LIBRARIES}
+                     PUBLIC_LIBS     ${NetCDF_LIBRARIES}
+                     PUBLIC_INCLUDES ${NetCDF_INCLUDE_DIRS}
                      LINKER_LANGUAGE ${FEMPS_LINKER_LANGUAGE}
                    )
+
+target_include_directories( fv3jedilm INTERFACE $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>
+                                                $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)

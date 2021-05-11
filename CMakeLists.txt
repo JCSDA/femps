@@ -45,8 +45,8 @@ include( femps_extra_macros )
 # link_libraries(${MPI_Fortran_LIBRARIES})
 
 # NetCDF
+find_package( jedicmake QUIET )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
-include_directories( ${NETCDF_INCLUDE_DIR} )
 
 ################################################################################
 # Export package info
