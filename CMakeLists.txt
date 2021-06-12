@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
 
-project( femps VERSION 1.0.0 LANGUAGES Fortran )
+project( femps VERSION 1.1.0 LANGUAGES Fortran )
 
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH})
 
@@ -45,8 +45,8 @@ include( femps_extra_macros )
 # link_libraries(${MPI_Fortran_LIBRARIES})
 
 # NetCDF
+find_package( jedicmake QUIET )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
-include_directories( ${NETCDF_INCLUDE_DIR} )
 
 ################################################################################
 # Export package info
