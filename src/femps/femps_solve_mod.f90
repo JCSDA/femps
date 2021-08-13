@@ -861,27 +861,26 @@ end subroutine laplace
 
 ! --------------------------------------------------------------------------------------------------
 
-subroutine inverselaplace(grid,oprs,igrid,hf,f,removemean_in,level)
+subroutine inverselaplace(grid,oprs,igrid,hf,f,removemean_in,field_conv)
 
 ! To apply the inverse Laplacian operator to the input field hf,
 ! on grid igrid, the result appearing in the output field f.
 ! Note f and hf are area integrals (2-forms).
 
 implicit none
-type(fempsgrid),      intent(in)  :: grid
-type(fempsoprs),      intent(in)  :: oprs
-integer,              intent(in)  :: igrid
-real(kind=kind_real), intent(in)  :: hf(grid%nface(igrid))
-real(kind=kind_real), intent(out) :: f(grid%nface(igrid))
-logical, optional,    intent(in)  :: removemean_in
-integer, optional,    intent(in)  :: level
+type(fempsgrid),                intent(in)     :: grid
+type(fempsoprs),                intent(in)     :: oprs
+integer,                        intent(in)     :: igrid
+real(kind=kind_real),           intent(in)     :: hf(grid%nface(igrid))
+real(kind=kind_real),           intent(out)    :: f(grid%nface(igrid))
+logical, optional,              intent(in)     :: removemean_in
+real(kind=kind_real), optional, intent(inout)  :: field_conv(grid%niter)
 
 integer :: nf, ne, nv, ipass
 real(kind=kind_real) :: beta = 1.0_kind_real, fbar
 real(kind=kind_real), allocatable, dimension(:) :: ff1, ff2, ff3, ff4, temp1, temp2
 logical :: removemean
 real(kind=kind_real), allocatable, dimension(:) :: hf_check
-real(kind=kind_real) :: rmse
 
 removemean = .false.
 if (present(removemean_in)) removemean = removemean_in
@@ -904,6 +903,9 @@ if (grid%check_convergence) allocate(hf_check(nf))
 
 ! Iterate several passes
 do ipass = 1, grid%niter
+
+  ! Print
+  if (grid%rank == 0) print*, "   FEMPS inverse Laplacian iteration number for root processor: ", ipass
 
   ! Compute residual based on latest estimate
   call massL(oprs,f,ff2,grid%ngrids,nf)
@@ -934,10 +936,9 @@ do ipass = 1, grid%niter
 
   ! Optionally track the convergence
   if (grid%check_convergence) then
-    if (.not. present(level)) call message("If checking convergence inverselaplace needs level input", fatal)
+    if (.not. present(field_conv)) call message("Checking conv provide output argument", fatal)
     call laplace(grid,oprs,igrid,f,hf_check)
-    rmse = sqrt(sum((hf_check/grid%farea(:,grid%ngrids)-hf/grid%farea(:,grid%ngrids))**2)/nf)
-    print*, "INVERSELAP RMSE:", level, ipass, rmse
+    field_conv(ipass) = sqrt(sum((hf_check/grid%farea(:,grid%ngrids)-hf/grid%farea(:,grid%ngrids))**2)/nf)
   endif
 
 enddo
