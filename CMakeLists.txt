@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.3.2 FATAL_ERROR )
 
-project( femps VERSION 1.1.0 LANGUAGES Fortran )
+project( femps VERSION 1.2.0 LANGUAGES Fortran )
 
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH})
 
